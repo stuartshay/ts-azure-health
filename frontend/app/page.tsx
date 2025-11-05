@@ -11,8 +11,9 @@ export default function Home() {
         scopes: [process.env.NEXT_PUBLIC_API_SCOPE!],
       });
       setStatus("Signed in");
-    } catch (e:any) {
-      setStatus("Sign-in failed: " + e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setStatus("Sign-in failed: " + message);
     }
   }
 
@@ -30,8 +31,9 @@ export default function Home() {
       });
       const t = await r.text();
       setStatus(`Downstream responded (${r.status}): ${t}`);
-    } catch (e:any) {
-      setStatus("Call failed: " + e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setStatus("Call failed: " + message);
     }
   }
 
@@ -40,8 +42,9 @@ export default function Home() {
       const r = await fetch("/api/kv-secret");
       const t = await r.text();
       setStatus(`KV secret: ${t}`);
-    } catch (e:any) {
-      setStatus("KV read failed: " + e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setStatus("KV read failed: " + message);
     }
   }
 
