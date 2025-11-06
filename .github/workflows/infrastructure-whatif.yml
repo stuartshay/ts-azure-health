@@ -26,7 +26,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Check Azure credentials
+        id: check_credentials
+        run: |
+          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+            echo "has_credentials=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Azure credentials not configured - skipping what-if preview"
+          else
+            echo "has_credentials=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Azure login
+        if: steps.check_credentials.outputs.has_credentials == 'true'
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -34,6 +45,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Setup retry utilities
+        if: steps.check_credentials.outputs.has_credentials == 'true'
         shell: bash
         run: |
           # Create retry function for Azure operations
@@ -116,6 +128,7 @@ jobs:
           echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
 
       - name: Run What-If for Dev environment
+        if: steps.check_credentials.outputs.has_credentials == 'true'
         id: whatif_dev
         continue-on-error: true
         shell: bash
@@ -157,6 +170,7 @@ jobs:
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Prod environment
+        if: steps.check_credentials.outputs.has_credentials == 'true'
         id: whatif_prod
         continue-on-error: true
         shell: bash
@@ -202,23 +216,40 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Read the what-if summary
+            // Check if credentials were available
+            const hasCredentials = '${{ steps.check_credentials.outputs.has_credentials }}' === 'true';
+
             let summary = '';
-            try {
-              summary = fs.readFileSync('/tmp/whatif-summary.md', 'utf8');
-            } catch (error) {
-              summary = '⚠️ Could not generate what-if preview. Check workflow logs for details.';
+            
+            if (!hasCredentials) {
+              summary = `⚠️  **Azure credentials not configured**
+              
+              The infrastructure what-if preview requires Azure credentials to be set up as repository secrets.
+              
+              To enable what-if previews, follow the setup instructions in:
+              - [docs/GITHUB_ACTIONS_SETUP.md](https://github.com/${{ github.repository }}/blob/develop/docs/GITHUB_ACTIONS_SETUP.md)
+              
+              Required secrets:
+              - \`AZURE_CLIENT_ID\`
+              - \`AZURE_TENANT_ID\`
+              - \`AZURE_SUBSCRIPTION_ID\``;
+            } else {
+              // Read the what-if summary
+              try {
+                summary = fs.readFileSync('/tmp/whatif-summary.md', 'utf8');
+              } catch (error) {
+                summary = '⚠️ Could not generate what-if preview. Check workflow logs for details.';
+              }
             }
 
             const body = `## 🔍 Infrastructure What-If Preview
 
-            This PR modifies infrastructure files. Here's a preview of what would change when deployed:
+            This PR modifies infrastructure files. ${hasCredentials ? "Here's a preview of what would change when deployed:" : ''}
 
             ${summary}
 
             ---
-            <sub>💡 This preview shows potential changes to both **dev** and **prod**
-            environments based on the current Bicep templates.</sub>
+            <sub>💡 ${hasCredentials ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure Azure credentials to enable infrastructure change previews.'}</sub>
             `;
 
             // Find existing comment
