@@ -1,0 +1,198 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to destroy'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+        default: 'dev'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  MAX_RETRY_ATTEMPTS: 5
+  RETRY_BASE_DELAY: 2
+
+jobs:
+  destroy:
+    name: Destroy ${{ github.event.inputs.environment }} infrastructure
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup retry utilities
+        shell: bash
+        run: |
+          # Create retry function for Azure operations
+          cat > /tmp/retry-utils.sh << 'RETRY_EOF'
+          #!/bin/bash
+
+          # Retry function with exponential backoff for Azure operations
+          retry_azure_operation() {
+            local max_attempts=$1
+            shift
+            local description=$1
+            shift
+            local command=("$@")
+
+            local attempt=1
+            local delay=$RETRY_BASE_DELAY
+            local max_delay=32
+
+            echo "🔄 Starting: $description"
+
+            while [ $attempt -le $max_attempts ]; do
+              echo "  Attempt $attempt/$max_attempts..."
+
+              local output
+              local exit_code
+
+              set +e
+              output=$("${command[@]}" 2>&1)
+              exit_code=$?
+              set -e
+
+              if [ $exit_code -eq 0 ]; then
+                echo "$output"
+                echo "✅ Success: $description"
+                return 0
+              fi
+
+              if echo "$output" | grep -qE \
+                "(AuthorizationFailed|InvalidAuthenticationToken|Forbidden|InvalidResourceGroupName)"; then
+                echo "❌ Permanent failure detected: $description"
+                echo "$output" >&2
+                return $exit_code
+              fi
+
+              if [ $attempt -eq $max_attempts ]; then
+                echo "❌ Failed after $max_attempts attempts: $description"
+                echo "$output" >&2
+                return $exit_code
+              fi
+
+              local error_type="Unknown error"
+              if echo "$output" | grep -qE "TooManyRequests|429"; then
+                error_type="Rate limit (429)"
+              elif echo "$output" | grep -qE "ServiceUnavailable|503"; then
+                error_type="Service unavailable (503)"
+              elif echo "$output" | grep -qE "GatewayTimeout|504"; then
+                error_type="Gateway timeout (504)"
+              elif echo "$output" | grep -qE "InternalServerError|500"; then
+                error_type="Internal server error (500)"
+              elif echo "$output" | grep -qE "Conflict|409"; then
+                error_type="Conflict (409)"
+              fi
+
+              echo "⚠️  $error_type - Retrying in ${delay}s..."
+              echo "    Error preview: $(echo "$output" | head -n 1)"
+
+              sleep $delay
+
+              delay=$((delay * 2))
+              if [ $delay -gt $max_delay ]; then
+                delay=$max_delay
+              fi
+
+              attempt=$((attempt + 1))
+            done
+          }
+          RETRY_EOF
+
+          chmod +x /tmp/retry-utils.sh
+          echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
+
+      - name: Set environment variables
+        run: |
+          echo "RESOURCE_GROUP=rg-ts-azure-health-${{ github.event.inputs.environment }}" >> "$GITHUB_ENV"
+
+      - name: Check if resource group exists
+        id: check_rg
+        run: |
+          if az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Resource group exists: $RESOURCE_GROUP"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Resource group does not exist: $RESOURCE_GROUP"
+          fi
+
+      - name: List resources to be deleted
+        if: steps.check_rg.outputs.exists == 'true'
+        run: |
+          {
+            echo "### Resources to be Deleted"
+            echo ""
+            echo "**Environment:** ${{ github.event.inputs.environment }}"
+            echo "**Resource Group:** $RESOURCE_GROUP"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Listing all resources in resource group: $RESOURCE_GROUP"
+          az resource list \
+            --resource-group "$RESOURCE_GROUP" \
+            --output table
+
+          # Add resources to summary
+          {
+            echo "#### Resources"
+            echo '```'
+            az resource list \
+              --resource-group "$RESOURCE_GROUP" \
+              --output table
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete resource group
+        if: steps.check_rg.outputs.exists == 'true'
+        shell: bash
+        run: |
+          source /tmp/retry-utils.sh
+
+          echo "⚠️ Deleting resource group: $RESOURCE_GROUP"
+          echo "This will delete all resources in the resource group..."
+
+          retry_azure_operation \
+            "$MAX_RETRY_ATTEMPTS" \
+            "Delete resource group $RESOURCE_GROUP" \
+            az group delete \
+              --name "$RESOURCE_GROUP" \
+              --yes \
+              --no-wait
+
+          echo "✅ Resource group deletion initiated: $RESOURCE_GROUP"
+          {
+            echo ""
+            echo "---"
+            echo "**Status:** ✅ Resource group deletion initiated successfully"
+            echo ""
+            echo "> Note: Deletion is asynchronous and may take several minutes to complete."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Skip deletion
+        if: steps.check_rg.outputs.exists == 'false'
+        run: |
+          echo "No action needed - resource group does not exist"
+          {
+            echo "### Destruction Summary"
+            echo ""
+            echo "**Status:** ℹ️ Resource group \`$RESOURCE_GROUP\` does not exist"
+            echo ""
+            echo "No resources to delete."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,22 +1,18 @@
 targetScope = 'resourceGroup'
 
+@description('Environment name (dev, staging, prod)')
+@allowed([
+  'dev'
+  'staging'
+  'prod'
+])
+param environment string = 'dev'
+
 @description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Key Vault name')
-param keyVaultName string
-
-@description('Container App name')
-param containerAppName string = 'pwsh-health-fe'
-
-@description('Managed Environment name')
-param managedEnvName string = 'pwsh-health-fe-env'
-
-@description('User Assigned Managed Identity name')
-param uamiName string = 'pwsh-health-fe-uami'
-
-@description('Public FQDN ingress (true = external)')
-param externalIngress bool = true
+@description('Base name for resources (will be suffixed with environment)')
+param baseName string = 'tsazurehealth'
 
 @description('Azure Container Registry name (alphanumeric only)')
 param acrName string = 'azureconnectedservicesacr'
@@ -27,9 +23,34 @@ param acrResourceGroup string = 'AzureConnectedServices-RG'
 @description('Container image tag version')
 param imageTag string = 'latest'
 
+@description('Public FQDN ingress (true = external)')
+param externalIngress bool = true
+
+@description('Current date for tagging (automatically set)')
+param currentDate string = utcNow('yyyy-MM-dd')
+
+// Generate unique names based on environment
+var uniqueSuffix = uniqueString(resourceGroup().id)
+// Note: Key Vault names are limited to 24 characters and must be globally unique
+// The take() function ensures we don't exceed this limit by truncating if needed
+// Format: kv-{baseName}-{env}-{unique} where unique is 13 chars from uniqueString()
+var keyVaultName = take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
+var containerAppName = 'app-${baseName}-${environment}'
+var managedEnvName = 'env-${baseName}-${environment}'
+var uamiName = 'id-${baseName}-${environment}'
+
+// Tags for all resources
+var commonTags = {
+  environment: environment
+  project: 'ts-azure-health'
+  managedBy: 'bicep'
+  createdDate: currentDate
+}
+
 resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
+  tags: commonTags
   properties: {
     tenantId: subscription().tenantId
     sku: {
@@ -47,6 +68,7 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: uamiName
   location: location
+  tags: commonTags
 }
 
 // Grant UAMI AcrPull role on existing ACR in another resource group
@@ -62,6 +84,7 @@ module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
 resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
   name: managedEnvName
   location: location
+  tags: commonTags
   properties: {
     appLogsConfiguration: {
       destination: 'log-analytics'
@@ -72,6 +95,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
 resource app 'Microsoft.App/containerApps@2025-01-01' = {
   name: containerAppName
   location: location
+  tags: commonTags
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
@@ -131,3 +155,14 @@ resource kvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalType: 'ServicePrincipal'
   }
 }
+
+// Outputs
+output containerAppName string = app.name
+output containerAppUrl string = 'https://${app.properties.configuration.ingress.fqdn}'
+output keyVaultName string = kv.name
+output keyVaultUrl string = kv.properties.vaultUri
+output managedIdentityName string = uami.name
+output managedIdentityPrincipalId string = uami.properties.principalId
+output resourceGroupName string = resourceGroup().name
+output environment string = environment
+
