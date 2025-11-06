@@ -1,8 +1,8 @@
 # Path to oh-my-zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
-# Set theme to robbyrussell as base
-ZSH_THEME="robbyrussell"
+# Set theme to agnoster
+ZSH_THEME="agnoster"
 
 # Disable auto-update prompts
 DISABLE_AUTO_UPDATE=true
@@ -26,15 +26,27 @@ function azure_account_info() {
   fi
 }
 
-# Override the robbyrussell theme prompt to add Azure info
-setopt PROMPT_SUBST
-PROMPT='%{$fg[green]%}%n@%m%{$reset_color%} %{$fg[cyan]%}~/%{$fg[blue]%}%c%{$reset_color%} $(git_prompt_info)$(azure_account_info) ± '
+# Add Azure info to agnoster prompt
+prompt_azure() {
+  if command -v az &> /dev/null; then
+    local account=$(az account show --query name -o tsv 2>/dev/null)
+    if [[ -n "$account" ]]; then
+      prompt_segment yellow black "☁ $account"
+    fi
+  fi
+}
 
-# Git prompt info (from robbyrussell theme)
-ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}⚡ "
-ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
-ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}✗"
-ZSH_THEME_GIT_PROMPT_CLEAN=" %{$fg[green]%}✓"
+# Override agnoster build_prompt to include Azure
+build_prompt() {
+  RETVAL=$?
+  prompt_status
+  prompt_virtualenv
+  prompt_context
+  prompt_dir
+  prompt_git
+  prompt_azure
+  prompt_end
+}
 
 # Aliases
 alias ll='ls -lah'
