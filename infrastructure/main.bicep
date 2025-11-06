@@ -19,7 +19,10 @@ param uamiName string = 'pwsh-health-fe-uami'
 param externalIngress bool = true
 
 @description('Azure Container Registry name (alphanumeric only)')
-param acrName string = 'acrtazurehealth'
+param acrName string = 'azureconnectedservicesacr'
+
+@description('Azure Container Registry Resource Group name')
+param acrResourceGroup string = 'AzureConnectedServices-RG'
 
 @description('Container image tag version')
 param imageTag string = 'latest'
@@ -46,20 +49,13 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   location: location
 }
 
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+// Reference existing ACR in another resource group
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
   name: acrName
-  location: location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    adminUserEnabled: false
-    publicNetworkAccess: 'Enabled'
-    networkRuleBypassOptions: 'AzureServices'
-  }
+  scope: resourceGroup(acrResourceGroup)
 }
 
-// Grant UAMI the AcrPull role on the registry
+// Grant UAMI the AcrPull role on the existing registry
 resource acrPullRoleDef 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: subscription()
   name: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull

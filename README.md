@@ -187,11 +187,11 @@ This project includes automated CI/CD via GitHub Actions for deploying to Azure 
      --role Contributor \
      --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
 
-   # AcrPush role for pushing images
+   # AcrPush role for pushing images to existing ACR
    az role assignment create \
      --assignee $CLIENT_ID \
      --role AcrPush \
-     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/AzureConnectedServices-RG/providers/Microsoft.ContainerRegistry/registries/azureconnectedservicesacr
    ```
 
 5. **Configure GitHub Secrets**: Add the following secrets to your GitHub repository (Settings → Secrets and variables → Actions):
@@ -215,13 +215,13 @@ The workflow automatically manages versioning based on the environment:
 
 - Uses semantic versioning from `frontend/package.json` (e.g., `1.2.3`)
 - Tags: `1.2.3`, `1.2`, `1`, `latest`
-- Example: `acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0`
+- Example: `azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0.1.0`
 
 **Develop (develop branch)**:
 
 - Uses pre-release versioning with build numbers (e.g., `1.2.3-rc.123`)
 - Tags: `1.2.3-rc.123`, `develop`, `sha-abc1234`
-- Example: `acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0-rc.42`
+- Example: `azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0.1.0-rc.42`
 
 To bump the version, update the `version` field in `frontend/package.json` and commit to the respective branch.
 
@@ -251,13 +251,13 @@ If you prefer to deploy manually or need to troubleshoot:
 # Login to Azure
 az login
 
-# Login to ACR
-az acr login --name acrtazurehealth
+# Login to existing ACR
+az acr login --name azureconnectedservicesacr
 
 # Build and push
 cd frontend/
-docker build -t acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest .
-docker push acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest
+docker build -t azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest .
+docker push azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
 ```
 
 #### 2. Deploy infrastructure
@@ -276,12 +276,13 @@ az deployment group create \
     containerAppName="app-ts-azure-health" \
     managedEnvName="env-ts-azure-health" \
     uamiName="id-ts-azure-health" \
-    acrName="acrtazurehealth"
+    acrName="azureconnectedservicesacr" \
+    acrResourceGroup="AzureConnectedServices-RG"
 ```
 
 This creates:
 
-- An Azure Container Registry with managed identity authentication
+- References existing Azure Container Registry in AzureConnectedServices-RG
 - A user-assigned managed identity (UAMI) with AcrPull and Key Vault access
 - A Key Vault with RBAC authorization
 - Container Apps Environment

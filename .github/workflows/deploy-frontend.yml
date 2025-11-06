@@ -17,7 +17,8 @@ permissions:
   contents: read
 
 env:
-  ACR_NAME: acrtazurehealth
+  ACR_NAME: azureconnectedservicesacr
+  ACR_RESOURCE_GROUP: AzureConnectedServices-RG
   IMAGE_NAME: ts-azure-health-frontend
   RESOURCE_GROUP: rg-azure-health
   CONTAINER_APP_NAME: app-ts-azure-health
@@ -158,6 +159,7 @@ jobs:
             managedEnvName=env-ts-azure-health
             uamiName=id-ts-azure-health
             acrName=${{ env.ACR_NAME }}
+            acrResourceGroup=${{ env.ACR_RESOURCE_GROUP }}
           failOnStdErr: false
 
       - name: Get Container App FQDN

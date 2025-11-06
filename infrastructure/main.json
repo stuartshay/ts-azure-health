@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "5774387966384639013"
+      "templateHash": "10583640270159757241"
     }
   },
   "parameters": {
@@ -14,12 +14,6 @@
       "defaultValue": "[resourceGroup().location]",
       "metadata": {
         "description": "Location for all resources"
-      }
-    },
-    "containerImage": {
-      "type": "string",
-      "metadata": {
-        "description": "Container image (e.g., myacr.azurecr.io/pwsh-health-fe:latest)"
       }
     },
     "keyVaultName": {
@@ -55,6 +49,20 @@
       "metadata": {
         "description": "Public FQDN ingress (true = external)"
       }
+    },
+    "acrName": {
+      "type": "string",
+      "defaultValue": "acrtazurehealth",
+      "metadata": {
+        "description": "Azure Container Registry name (alphanumeric only)"
+      }
+    },
+    "imageTag": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Container image tag version"
+      }
     }
   },
   "resources": [
@@ -81,6 +89,35 @@
       "apiVersion": "2023-01-31",
       "name": "[parameters('uamiName')]",
       "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2023-07-01",
+      "name": "[parameters('acrName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "adminUserEnabled": false,
+        "publicNetworkAccess": "Enabled",
+        "networkRuleBypassOptions": "AzureServices"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.ContainerRegistry/registries/{0}', parameters('acrName'))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+      "properties": {
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '2023-01-31').principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName'))]"
+      ]
     },
     {
       "type": "Microsoft.App/managedEnvironments",
@@ -112,7 +149,12 @@
             "external": "[parameters('externalIngress')]",
             "targetPort": 3000
           },
-          "registries": [],
+          "registries": [
+            {
+              "server": "[format('{0}.azurecr.io', parameters('acrName'))]",
+              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName'))]"
+            }
+          ],
           "secrets": [],
           "dapr": {
             "enabled": false
@@ -121,7 +163,7 @@
         "template": {
           "containers": [
             {
-              "image": "[parameters('containerImage')]",
+              "image": "[format('{0}.azurecr.io/ts-azure-health-frontend:{1}', parameters('acrName'), parameters('imageTag'))]",
               "name": "frontend",
               "env": [
                 {

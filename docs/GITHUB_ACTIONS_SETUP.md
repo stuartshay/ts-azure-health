@@ -9,7 +9,8 @@ The deployment workflow uses:
 - **OIDC Authentication**: Federated credentials for secure, passwordless Azure authentication
 - **Semantic Versioning**: Production releases use semver (1.2.3), develop uses pre-release with build numbers (1.2.3-rc.123)
 - **Multi-Tag Strategy**: Multiple tags for flexible image management
-- **Bicep Infrastructure**: Automated deployment of ACR, Container Apps, Key Vault, and all dependencies
+- **Existing ACR**: Uses existing Azure Container Registry (azureconnectedservicesacr) in AzureConnectedServices-RG
+- **Bicep Infrastructure**: Automated deployment of Container Apps, Key Vault, and all dependencies
 
 ## Prerequisites
 
@@ -102,8 +103,11 @@ az role assignment create \
   --role Contributor \
   --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
 
-# AcrPush role for pushing container images (will be applied after ACR is created)
-# Note: This will be granted automatically when the workflow runs the first time
+# AcrPush role for pushing images to existing ACR
+az role assignment create \
+  --assignee $CLIENT_ID \
+  --role AcrPush \
+  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/AzureConnectedServices-RG/providers/Microsoft.ContainerRegistry/registries/azureconnectedservicesacr
 ```
 
 ### 5. Configure GitHub Repository Secrets
@@ -159,10 +163,10 @@ The workflow automatically manages versions based on `frontend/package.json`:
 **Example**:
 
 ```
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:0
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0.1.0
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0.1
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
 ```
 
 #### Develop Deployment (develop branch)
@@ -176,9 +180,9 @@ acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest
 **Example**:
 
 ```
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0-rc.42
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:develop
-acrtazurehealth.azurecr.io/ts-azure-health-frontend:sha-a1b2c3d
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:0.1.0-rc.42
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:develop
+azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:sha-a1b2c3d
 ```
 
 ### Updating the Version
@@ -281,13 +285,13 @@ If ACR push fails:
 
 ```bash
 # Verify ACR exists and identity has AcrPush role
-az acr show --name acrtazurehealth --resource-group rg-azure-health
+az acr show --name azureconnectedservicesacr --resource-group rg-azure-health
 
 # Grant AcrPush role
 az role assignment create \
   --assignee $CLIENT_ID \
   --role AcrPush \
-  --scope $(az acr show --name acrtazurehealth --query id -o tsv)
+  --scope $(az acr show --name azureconnectedservicesacr --query id -o tsv)
 ```
 
 ### Image Pull Errors in Container App
