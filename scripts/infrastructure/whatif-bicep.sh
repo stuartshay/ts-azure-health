@@ -113,7 +113,7 @@ echo -e "${CYAN}Checking resource group exists...${NC}"
 if ! az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
   echo -e "${YELLOW}Resource group does not exist: $RESOURCE_GROUP${NC}"
   echo -e "${GRAY}Create it first with:${NC}"
-  echo -e "${YELLOW}  az group create --name $RESOURCE_GROUP --location $LOCATION${NC}"
+  echo -e "${YELLOW}  az group create --name \"$RESOURCE_GROUP\" --location \"$LOCATION\"${NC}"
   echo -e ""
   exit 1
 fi
