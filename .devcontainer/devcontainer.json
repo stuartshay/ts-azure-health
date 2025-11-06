@@ -52,11 +52,11 @@
         "ms-vscode.vscode-typescript-next",
         "yoavbls.pretty-ts-errors",
         "usernamehw.errorlens",
-        
+
         // React/Next.js
         "dsznajder.es7-react-js-snippets",
         "burkeholland.simple-react-snippets",
-        
+
         // Azure development
         "ms-azuretools.vscode-azureappservice",
         "ms-azuretools.vscode-azurefunctions",
@@ -101,7 +101,7 @@
         "ms-vscode.makefile-tools",
         "waderyan.gitblame",
         "github.vscode-github-actions",
-        
+
         // JSON & Configuration
         "tamasfe.even-better-toml",
         "redhat.vscode-yaml",
