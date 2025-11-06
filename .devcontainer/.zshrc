@@ -1,8 +1,8 @@
 # Path to oh-my-zsh installation
 export ZSH="$HOME/.oh-my-zsh"
 
-# Set theme to minimal for customization
-ZSH_THEME=""
+# Set theme to robbyrussell as base
+ZSH_THEME="robbyrussell"
 
 # Disable auto-update prompts
 DISABLE_AUTO_UPDATE=true
@@ -21,27 +21,20 @@ function azure_account_info() {
   if command -v az &> /dev/null; then
     local account=$(az account show --query name -o tsv 2>/dev/null)
     if [[ -n "$account" ]]; then
-      echo "[Az: $account]"
+      echo " %{$fg[yellow]%}☁ $account%{$reset_color%}"
     fi
   fi
 }
 
-# Function to get git branch
-function git_branch_name() {
-  local branch=$(git symbolic-ref --short HEAD 2>/dev/null)
-  if [[ -n "$branch" ]]; then
-    echo "[$branch]"
-  fi
-}
-
-# Custom PowerShell-style prompt
+# Override the robbyrussell theme prompt to add Azure info
 setopt PROMPT_SUBST
+PROMPT='%{$fg[green]%}%n@%m%{$reset_color%} %{$fg[cyan]%}%~%{$reset_color%} $(git_prompt_info)$(azure_account_info) ± '
 
-# Two-line PowerShell-style prompt
-# Line 1: PS /path [branch] [Az: account]
-# Line 2: PS /path [branch] [Az: account] PS>
-PROMPT='%{$fg[cyan]%}PS%{$reset_color%} %{$fg[yellow]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[cyan]%}$(azure_account_info)%{$reset_color%}
-%{$fg[cyan]%}PS%{$reset_color%} %{$fg[yellow]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[cyan]%}$(azure_account_info)%{$reset_color%} %{$fg[cyan]%}PS>%{$reset_color%} '
+# Git prompt info (from robbyrussell theme)
+ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}⚡ "
+ZSH_THEME_GIT_PROMPT_SUFFIX="%{$reset_color%}"
+ZSH_THEME_GIT_PROMPT_DIRTY=" %{$fg[red]%}✗"
+ZSH_THEME_GIT_PROMPT_CLEAN=" %{$fg[green]%}✓"
 
 # Aliases
 alias ll='ls -lah'
