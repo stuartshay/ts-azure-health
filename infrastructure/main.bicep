@@ -50,7 +50,7 @@ var commonTags = {
 // Log Analytics workspace name
 var logAnalyticsWorkspaceName = 'log-${baseName}-${environment}'
 
-resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
+resource kv 'Microsoft.KeyVault/vaults@2025-05-01' = {
   name: keyVaultName
   location: location
   tags: commonTags
@@ -68,14 +68,14 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
   name: uamiName
   location: location
   tags: commonTags
 }
 
 // Log Analytics workspace for Container Apps logs
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
   name: logAnalyticsWorkspaceName
   location: location
   tags: commonTags
@@ -185,4 +185,3 @@ output managedIdentityName string = uami.name
 output managedIdentityPrincipalId string = uami.properties.principalId
 output resourceGroupName string = resourceGroup().name
 output environment string = environment
-
