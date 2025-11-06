@@ -49,25 +49,13 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   location: location
 }
 
-// Reference existing ACR in another resource group
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: acrName
+// Grant UAMI AcrPull role on existing ACR in another resource group
+module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
+  name: 'acrRoleAssignment'
   scope: resourceGroup(acrResourceGroup)
-}
-
-// Grant UAMI the AcrPull role on the existing registry
-resource acrPullRoleDef 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull
-}
-
-resource acrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(acr.id, uami.id, acrPullRoleDef.name)
-  scope: acr
-  properties: {
+  params: {
+    acrName: acrName
     principalId: uami.properties.principalId
-    roleDefinitionId: acrPullRoleDef.id
-    principalType: 'ServicePrincipal'
   }
 }
 
@@ -100,7 +88,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
       }
       registries: [
         {
-          server: '${acrName}.azurecr.io'
+          server: acrRoleAssignment.outputs.acrLoginServer
           identity: uami.id
         }
       ]
@@ -112,7 +100,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          image: '${acrName}.azurecr.io/ts-azure-health-frontend:${imageTag}'
+          image: '${acrRoleAssignment.outputs.acrLoginServer}/ts-azure-health-frontend:${imageTag}'
           name: 'frontend'
           env: [
             { name: 'KV_URL', value: kv.properties.vaultUri }
