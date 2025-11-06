@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "11380197023775307446"
+      "templateHash": "13533994246418416291"
     }
   },
   "parameters": {
@@ -99,7 +99,7 @@
     },
     {
       "type": "Microsoft.App/managedEnvironments",
-      "apiVersion": "2024-03-01",
+      "apiVersion": "2025-01-01",
       "name": "[parameters('managedEnvName')]",
       "location": "[parameters('location')]",
       "properties": {
@@ -110,7 +110,7 @@
     },
     {
       "type": "Microsoft.App/containerApps",
-      "apiVersion": "2024-03-01",
+      "apiVersion": "2025-01-01",
       "name": "[parameters('containerAppName')]",
       "location": "[parameters('location')]",
       "identity": {
