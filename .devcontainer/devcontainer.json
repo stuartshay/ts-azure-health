@@ -211,11 +211,12 @@
   },
 
   // Install dependencies after container is created
-  "postCreateCommand": "cd frontend && npm ci",
+  "postCreateCommand": "bash -c 'cd frontend && npm ci && curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv tool install specify-cli'",
 
   // Set environment variables
   "remoteEnv": {
-    "NEXT_TELEMETRY_DISABLED": "1"
+    "NEXT_TELEMETRY_DISABLED": "1",
+    "PATH": "${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
   },
 
   // Run as non-root user for security
