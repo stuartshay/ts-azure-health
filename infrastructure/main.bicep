@@ -3,9 +3,6 @@ targetScope = 'resourceGroup'
 @description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Container image (e.g., myacr.azurecr.io/pwsh-health-fe:latest)')
-param containerImage string
-
 @description('Key Vault name')
 param keyVaultName string
 
