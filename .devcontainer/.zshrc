@@ -43,8 +43,8 @@ build_prompt() {
   prompt_virtualenv
   prompt_context
   prompt_dir
-  prompt_git
   prompt_azure
+  prompt_git
   prompt_end
 }
 
