@@ -7,6 +7,23 @@ Minimal, production-friendly skeleton to:
 - Read a secret from Azure Key Vault using Managed Identity (no secrets in the browser).
 - Run locally and deploy as a single container to Azure Container Apps.
 
+## 🚀 Quick Start
+
+**Recommended**: Use VS Code Dev Containers for instant setup with all tools pre-configured!
+
+See the **[Development Setup Guide](docs/DEVELOPMENT_SETUP.md)** for detailed instructions.
+
+### Using Dev Containers (Fastest)
+
+1. Install Docker Desktop and VS Code with Dev Containers extension
+2. Clone this repository and open in VS Code
+3. Click "Reopen in Container" when prompted
+4. Everything is configured and ready to use!
+
+### Manual Setup
+
+If you prefer to set up manually, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md).
+
 ## Prerequisites
 
 - Node.js 22 (LTS)
@@ -182,6 +199,42 @@ az containerapp update \
   - `@azure/keyvault-secrets` for Key Vault access
 - **Runtime**: Node.js 22
 - **Deployment**: Azure Container Apps
+
+## Code Quality & Development Tools
+
+This project uses modern development tools to ensure code quality and consistency:
+
+### Pre-commit Hooks
+
+Automated checks run before each commit:
+
+- **Code Linting**: ESLint for TypeScript/JavaScript
+- **Type Checking**: TypeScript compiler validation
+- **Code Formatting**: Prettier for consistent style
+- **File Quality**: Trailing whitespace, end-of-file fixes
+- **Syntax Validation**: JSON, YAML checking
+- **Security**: Private key detection
+- **Docker**: Dockerfile linting with hadolint
+
+Install and use pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+See [docs/PRE_COMMIT.md](docs/PRE_COMMIT.md) for detailed information.
+
+### Dev Container
+
+The repository includes a complete development container configuration with:
+
+- All required tools (Node.js, Azure CLI, Docker, Git)
+- VS Code extensions for TypeScript, Azure, Docker, and more
+- Automatic dependency installation
+- Consistent development environment across all machines
+
+See [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) for setup instructions.
 
 ## Troubleshooting
 

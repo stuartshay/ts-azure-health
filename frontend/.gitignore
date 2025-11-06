@@ -8,3 +8,6 @@ yarn-error.log*
 pnpm-debug.log*
 .pnpm-store
 .DS_Store
+
+# TypeScript build info
+*.tsbuildinfo
