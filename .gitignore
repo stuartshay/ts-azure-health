@@ -1,6 +1,11 @@
 # Pre-commit
 .pre-commit-cache/
 
+# Environment variables
+.env
+.env.local
+.env*.local
+
 # IDE
 .vscode/*
 !.vscode/settings.json
