@@ -34,12 +34,14 @@ function git_branch_name() {
   fi
 }
 
-# Custom prompt
+# Custom PowerShell-style prompt
 setopt PROMPT_SUBST
 
-# First line: directory, git branch, azure account
-PROMPT='%{$fg[cyan]%}PS%{$reset_color%} %{$fg[blue]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[yellow]%}$(azure_account_info)%{$reset_color%}
-%{$fg[cyan]%}PS%{$reset_color%} %{$fg[blue]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[yellow]%}$(azure_account_info)%{$reset_color%} PS> '
+# Two-line PowerShell-style prompt
+# Line 1: PS /path [branch] [Az: account]
+# Line 2: PS /path [branch] [Az: account] PS>
+PROMPT='%{$fg[cyan]%}PS%{$reset_color%} %{$fg[yellow]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[cyan]%}$(azure_account_info)%{$reset_color%}
+%{$fg[cyan]%}PS%{$reset_color%} %{$fg[yellow]%}%~%{$reset_color%} %{$fg[green]%}$(git_branch_name)%{$reset_color%} %{$fg[cyan]%}$(azure_account_info)%{$reset_color%} %{$fg[cyan]%}PS>%{$reset_color%} '
 
 # Aliases
 alias ll='ls -lah'
