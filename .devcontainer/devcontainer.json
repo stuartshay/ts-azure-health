@@ -26,6 +26,9 @@
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest",
       "ppa": true
+    },
+    "ghcr.io/gvatsal60/dev-container-features/uv:1": {
+      "version": "latest"
     }
   },
 
@@ -211,12 +214,11 @@
   },
 
   // Install dependencies after container is created
-  "postCreateCommand": "bash -c 'cd frontend && npm ci && curl -LsSf https://astral.sh/uv/install.sh | sh && export PATH=\"$HOME/.local/bin:$PATH\" && uv tool install specify-cli'",
+  "postCreateCommand": ".devcontainer/postCreate.sh",
 
   // Set environment variables
   "remoteEnv": {
-    "NEXT_TELEMETRY_DISABLED": "1",
-    "PATH": "${containerEnv:HOME}/.local/bin:${containerEnv:PATH}"
+    "NEXT_TELEMETRY_DISABLED": "1"
   },
 
   // Run as non-root user for security
