@@ -208,7 +208,7 @@ jobs:
             --name "whatif-$(date +%Y%m%d-%H%M%S)" \
             --resource-group "$RESOURCE_GROUP" \
             --template-file infrastructure/main.bicep \
-            --parameters environment=staging \
+            --parameters infrastructure/staging.bicepparam \
             --result-format FullResourcePayloads 2>&1 || true)
 
           # Save output to file for comment
