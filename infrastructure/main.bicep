@@ -59,7 +59,7 @@ module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
   }
 }
 
-resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
+resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
   name: managedEnvName
   location: location
   properties: {
@@ -69,7 +69,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
-resource app 'Microsoft.App/containerApps@2024-03-01' = {
+resource app 'Microsoft.App/containerApps@2025-01-01' = {
   name: containerAppName
   location: location
   identity: {
