@@ -27,7 +27,7 @@ param acrResourceGroup string = 'AzureConnectedServices-RG'
 @description('Container image tag version')
 param imageTag string = 'latest'
 
-resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
+resource kv 'Microsoft.KeyVault/vaults@2025-05-01' = {
   name: keyVaultName
   location: location
   properties: {
