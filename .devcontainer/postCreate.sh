@@ -11,4 +11,8 @@ cd frontend && npm ci
 echo "🔧 Installing spec-kit CLI..."
 uv tool install specify-cli
 
+# Setup custom ZSH configuration
+echo "🎨 Configuring ZSH prompt..."
+cp /workspaces/ts-azure-health/.devcontainer/.zshrc ~/.zshrc
+
 echo "✅ Post-create setup complete!"
