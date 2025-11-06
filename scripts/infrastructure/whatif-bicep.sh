@@ -112,19 +112,16 @@ echo -e "${GREEN}[OK] Authenticated as: $USER_NAME${NC}"
 echo -e "${GRAY}  Subscription: $ACCOUNT_NAME${NC}"
 echo -e ""
 
-# Create resource group if it doesn't exist (required for what-if)
-echo -e "${CYAN}Ensuring resource group exists for what-if...${NC}"
+# Check resource group exists (required for what-if)
+echo -e "${CYAN}Checking resource group exists...${NC}"
 if ! az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-  echo -e "${GRAY}  Creating temporary resource group: $RESOURCE_GROUP${NC}"
-  az group create \
-    --name "$RESOURCE_GROUP" \
-    --location "$LOCATION" \
-    --tags environment="$ENVIRONMENT" project=ts-azure-health \
-    --output none
-  echo -e "${GREEN}[OK] Created resource group: $RESOURCE_GROUP${NC}"
-else
-  echo -e "${GREEN}[OK] Resource group exists: $RESOURCE_GROUP${NC}"
+  echo -e "${YELLOW}Resource group does not exist: $RESOURCE_GROUP${NC}"
+  echo -e "${GRAY}Create it first with:${NC}"
+  echo -e "${YELLOW}  az group create --name \"$RESOURCE_GROUP\" --location \"$LOCATION\"${NC}"
+  echo -e ""
+  exit 1
 fi
+echo -e "${GREEN}[OK] Resource group exists: $RESOURCE_GROUP${NC}"
 echo -e ""
 
 # Run what-if
