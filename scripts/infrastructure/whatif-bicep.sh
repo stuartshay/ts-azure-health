@@ -3,6 +3,10 @@
 # Preview infrastructure changes using Bicep what-if
 # Shows what would change without actually deploying.
 #
+# NOTE: This script may create a temporary resource group if it doesn't exist,
+# as Azure what-if requires a resource group to run against. This is necessary
+# for the what-if operation to work but does create an actual Azure resource.
+#
 # Usage:
 #   ./whatif-bicep.sh
 #   ./whatif-bicep.sh -e prod -l westus2

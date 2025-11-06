@@ -47,6 +47,9 @@ var commonTags = {
   createdDate: currentDate
 }
 
+// Log Analytics workspace name
+var logAnalyticsWorkspaceName = 'log-${baseName}-${environment}'
+
 resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -71,6 +74,19 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   tags: commonTags
 }
 
+// Log Analytics workspace for Container Apps logs
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: logAnalyticsWorkspaceName
+  location: location
+  tags: commonTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+    retentionInDays: 30
+  }
+}
+
 // Grant UAMI AcrPull role on existing ACR in another resource group
 module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
   name: 'acrRoleAssignment'
@@ -88,6 +104,10 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
   properties: {
     appLogsConfiguration: {
       destination: 'log-analytics'
+      logAnalyticsConfiguration: {
+        customerId: logAnalytics.properties.customerId
+        sharedKey: logAnalytics.listKeys().primarySharedKey
+      }
     }
   }
 }
