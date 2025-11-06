@@ -1,0 +1,19 @@
+# Prettier ignore file
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build artifacts
+*.tsbuildinfo
+
+# Environment files
+.env*
+!.env.example

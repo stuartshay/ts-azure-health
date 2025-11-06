@@ -1,0 +1,73 @@
+# Pre-commit hooks for code quality and validation
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file quality checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        exclude: '\.md$'
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+        args: ['--allow-multiple-documents']
+      - id: check-json
+        name: Check JSON syntax
+        exclude: '\.devcontainer/.*\.json$'
+      - id: check-added-large-files
+        name: Check for large files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: detect-private-key
+        name: Detect private keys
+      - id: mixed-line-ending
+        name: Fix mixed line endings
+        args: ['--fix=lf']
+
+  # TypeScript/JavaScript linting
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint (Next.js)
+        entry: bash -c 'cd frontend && npm run lint -- --quiet'
+        language: system
+        files: \.(js|jsx|ts|tsx)$
+        exclude: node_modules/
+        pass_filenames: false
+
+      - id: typescript-check
+        name: TypeScript Type Check
+        entry: bash -c 'cd frontend && npx tsc --noEmit'
+        language: system
+        files: \.(ts|tsx)$
+        exclude: node_modules/
+        pass_filenames: false
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        name: Lint Dockerfiles
+        # DL3008: Pin apt package versions - skipped for base images
+        # DL3009: Delete apt cache - handled by base images
+        args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
+
+  # Markdown formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: Format with Prettier
+        files: \.(json|ya?ml|md)$
+        exclude: |
+          (?x)^(
+            package-lock\.json|
+            frontend/package-lock\.json
+          )$
