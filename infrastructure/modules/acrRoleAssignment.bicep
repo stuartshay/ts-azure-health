@@ -7,7 +7,7 @@ param acrName string
 param principalId string
 
 // Reference the ACR in this resource group
-resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+resource acr 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
   name: acrName
 }
 
