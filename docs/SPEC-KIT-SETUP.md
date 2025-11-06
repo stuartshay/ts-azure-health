@@ -25,7 +25,7 @@ All required tools for the GitHub Spec-Kit framework have been successfully inst
 Spec-kit has been initialized in your project at:
 
 ```
-/home/vagrant/git/ts-azure-health/ts-azure-health/
+/home/vagrant/git/ts-azure-health/
 ```
 
 ### Created Directories

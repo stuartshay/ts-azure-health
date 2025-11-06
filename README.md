@@ -1,5 +1,7 @@
 # TS Azure Health — Frontend Starter (Next.js + BFF + Key Vault + ACA)
 
+[![Deploy Frontend to ACR and Azure Container Apps](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml)
+
 Minimal, production-friendly skeleton to:
 
 - Sign-in with Entra ID (MSAL PKCE).
