@@ -58,6 +58,18 @@ The devcontainer:
 - Configures editor settings for consistent formatting and linting
 - Mounts the Docker socket for Docker-in-Docker functionality
 
+### Security Considerations
+
+**Docker Socket Mounting**: The devcontainer mounts the host's Docker socket (`/var/run/docker.sock`) to enable Docker-in-Docker functionality. This allows you to build and manage containers from within the devcontainer.
+
+⚠️ **Important**: Mounting the Docker socket provides root-level access to the host system. This is acceptable for local development environments but should be used with caution. The container runs as the `node` user to minimize risk, but processes inside containers built via this socket run with host privileges.
+
+For production or shared environments, consider:
+
+- Using Docker-in-Docker without socket mounting (runs a separate Docker daemon)
+- Restricting access to the devcontainer to trusted users only
+- Using rootless Docker for additional security
+
 ## Usage
 
 ### VS Code

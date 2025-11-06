@@ -55,6 +55,8 @@ repos:
     hooks:
       - id: hadolint-docker
         name: Lint Dockerfiles
+        # DL3008: Pin apt package versions - skipped for base images
+        # DL3009: Delete apt cache - handled by base images
         args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
 
   # Markdown formatting
