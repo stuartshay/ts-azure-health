@@ -28,7 +28,7 @@ function azure_account_info() {
 
 # Override the robbyrussell theme prompt to add Azure info
 setopt PROMPT_SUBST
-PROMPT='%{$fg[green]%}%n@%m%{$reset_color%} %{$fg[cyan]%}%~%{$reset_color%} $(git_prompt_info)$(azure_account_info) ± '
+PROMPT='%{$fg[green]%}%n@%m%{$reset_color%} %{$fg[cyan]%}~/%{$fg[blue]%}%c%{$reset_color%} $(git_prompt_info)$(azure_account_info) ± '
 
 # Git prompt info (from robbyrussell theme)
 ZSH_THEME_GIT_PROMPT_PREFIX="%{$fg[yellow]%}⚡ "
