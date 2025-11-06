@@ -31,7 +31,7 @@ prompt_azure() {
   if command -v az &> /dev/null; then
     local account=$(az account show --query name -o tsv 2>/dev/null)
     if [[ -n "$account" ]]; then
-      prompt_segment yellow black "☁ $account"
+      prompt_segment cyan black "☁ $account"
     fi
   fi
 }
@@ -43,8 +43,8 @@ build_prompt() {
   prompt_virtualenv
   prompt_context
   prompt_dir
-  prompt_git
   prompt_azure
+  prompt_git
   prompt_end
 }
 

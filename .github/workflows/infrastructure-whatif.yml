@@ -220,15 +220,15 @@ jobs:
             const hasCredentials = '${{ steps.check_credentials.outputs.has_credentials }}' === 'true';
 
             let summary = '';
-            
+
             if (!hasCredentials) {
               summary = `⚠️  **Azure credentials not configured**
-              
+
               The infrastructure what-if preview requires Azure credentials to be set up as repository secrets.
-              
+
               To enable what-if previews, follow the setup instructions in:
               - [docs/GITHUB_ACTIONS_SETUP.md](https://github.com/${{ github.repository }}/blob/develop/docs/GITHUB_ACTIONS_SETUP.md)
-              
+
               Required secrets:
               - \`AZURE_CLIENT_ID\`
               - \`AZURE_TENANT_ID\`

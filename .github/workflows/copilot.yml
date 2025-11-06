@@ -15,7 +15,7 @@ jobs:
   setup:
     name: Setup Copilot Environment
     runs-on: ubuntu-latest
-    
+
     steps:
       # These steps run BEFORE firewall restrictions
       - name: Setup Azure Bicep CLI
@@ -24,10 +24,10 @@ jobs:
           curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
           chmod +x ./bicep
           sudo mv ./bicep /usr/local/bin/bicep
-          
+
           # Verify installation
           bicep --version
-          
+
       - name: Setup Azure CLI
         uses: azure/login@v2
         with:
@@ -35,7 +35,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         continue-on-error: true
-        
+
       - name: Cache Bicep modules
         uses: actions/cache@v4
         with:

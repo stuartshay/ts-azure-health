@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "11152670546914762495"
+      "templateHash": "2620916825873641923"
     }
   },
   "parameters": {
@@ -82,12 +82,13 @@
       "project": "ts-azure-health",
       "managedBy": "bicep",
       "createdDate": "[parameters('currentDate')]"
-    }
+    },
+    "logAnalyticsWorkspaceName": "[format('log-{0}-{1}', parameters('baseName'), parameters('environment'))]"
   },
   "resources": [
     {
       "type": "Microsoft.KeyVault/vaults",
-      "apiVersion": "2023-07-01",
+      "apiVersion": "2025-05-01",
       "name": "[variables('keyVaultName')]",
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]",
@@ -106,10 +107,23 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-      "apiVersion": "2023-01-31",
+      "apiVersion": "2024-11-30",
       "name": "[variables('uamiName')]",
       "location": "[parameters('location')]",
       "tags": "[variables('commonTags')]"
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2025-02-01",
+      "name": "[variables('logAnalyticsWorkspaceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[variables('commonTags')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
     },
     {
       "type": "Microsoft.App/managedEnvironments",
@@ -119,9 +133,16 @@
       "tags": "[variables('commonTags')]",
       "properties": {
         "appLogsConfiguration": {
-          "destination": "log-analytics"
+          "destination": "log-analytics",
+          "logAnalyticsConfiguration": {
+            "customerId": "[reference(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName')), '2025-02-01').customerId]",
+            "sharedKey": "[listKeys(resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName')), '2025-02-01').primarySharedKey]"
+          }
         }
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
+      ]
     },
     {
       "type": "Microsoft.App/containerApps",
@@ -162,7 +183,7 @@
               "env": [
                 {
                   "name": "KV_URL",
-                  "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri]"
+                  "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2025-05-01').vaultUri]"
                 }
               ],
               "probes": []
@@ -187,7 +208,7 @@
       "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
       "name": "[guid(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '4633458b-17de-408a-b874-0445c86b69e6')]",
       "properties": {
-        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2023-01-31').principalId]",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2024-11-30').principalId]",
         "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')]",
         "principalType": "ServicePrincipal"
       },
@@ -211,7 +232,7 @@
             "value": "[parameters('acrName')]"
           },
           "principalId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2023-01-31').principalId]"
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2024-11-30').principalId]"
           }
         },
         "template": {
@@ -221,7 +242,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.38.33.27573",
-              "templateHash": "2687351361729501149"
+              "templateHash": "14680845486307525985"
             }
           },
           "parameters": {
@@ -254,7 +275,7 @@
           "outputs": {
             "acrLoginServer": {
               "type": "string",
-              "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2023-07-01').loginServer]"
+              "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), '2025-04-01').loginServer]"
             }
           }
         }
@@ -279,7 +300,7 @@
     },
     "keyVaultUrl": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2023-07-01').vaultUri]"
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2025-05-01').vaultUri]"
     },
     "managedIdentityName": {
       "type": "string",
@@ -287,7 +308,7 @@
     },
     "managedIdentityPrincipalId": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2023-01-31').principalId]"
+      "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2024-11-30').principalId]"
     },
     "resourceGroupName": {
       "type": "string",
