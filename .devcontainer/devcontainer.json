@@ -26,6 +26,9 @@
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest",
       "ppa": true
+    },
+    "ghcr.io/gvatsal60/dev-container-features/uv:1": {
+      "version": "latest"
     }
   },
 
@@ -211,7 +214,7 @@
   },
 
   // Install dependencies after container is created
-  "postCreateCommand": "cd frontend && npm ci",
+  "postCreateCommand": ".devcontainer/postCreate.sh",
 
   // Set environment variables
   "remoteEnv": {

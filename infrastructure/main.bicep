@@ -3,9 +3,6 @@ targetScope = 'resourceGroup'
 @description('Location for all resources')
 param location string = resourceGroup().location
 
-@description('Container image (e.g., myacr.azurecr.io/pwsh-health-fe:latest)')
-param containerImage string
-
 @description('Key Vault name')
 param keyVaultName string
 
@@ -20,6 +17,15 @@ param uamiName string = 'pwsh-health-fe-uami'
 
 @description('Public FQDN ingress (true = external)')
 param externalIngress bool = true
+
+@description('Azure Container Registry name (alphanumeric only)')
+param acrName string = 'azureconnectedservicesacr'
+
+@description('Azure Container Registry Resource Group name')
+param acrResourceGroup string = 'AzureConnectedServices-RG'
+
+@description('Container image tag version')
+param imageTag string = 'latest'
 
 resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
@@ -41,6 +47,16 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: uamiName
   location: location
+}
+
+// Grant UAMI AcrPull role on existing ACR in another resource group
+module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
+  name: 'acrRoleAssignment'
+  scope: resourceGroup(acrResourceGroup)
+  params: {
+    acrName: acrName
+    principalId: uami.properties.principalId
+  }
 }
 
 resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
@@ -70,7 +86,12 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         external: externalIngress
         targetPort: 3000
       }
-      registries: []
+      registries: [
+        {
+          server: acrRoleAssignment.outputs.acrLoginServer
+          identity: uami.id
+        }
+      ]
       secrets: []
       dapr: {
         enabled: false
@@ -79,7 +100,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          image: containerImage
+          image: '${acrRoleAssignment.outputs.acrLoginServer}/ts-azure-health-frontend:${imageTag}'
           name: 'frontend'
           env: [
             { name: 'KV_URL', value: kv.properties.vaultUri }
