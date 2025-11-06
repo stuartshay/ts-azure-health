@@ -43,7 +43,7 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   location: location
 }
 
-resource acaEnv 'Microsoft.App/managedEnvironments@2024-02-02' = {
+resource acaEnv 'Microsoft.App/managedEnvironments@2024-02-02-preview' = {
   name: managedEnvName
   location: location
   properties: {
