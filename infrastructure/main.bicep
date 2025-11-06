@@ -53,7 +53,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2024-02-02' = {
   }
 }
 
-resource app 'Microsoft.App/containerApps@2024-02-02' = {
+resource app 'Microsoft.App/containerApps@2024-02-02-preview' = {
   name: containerAppName
   location: location
   identity: {
