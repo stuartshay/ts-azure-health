@@ -31,7 +31,11 @@
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-[Gates determined based on constitution file]
+- [ ] **Cloud-Native Azure Integration**: Feature uses Azure-managed services (Container Apps, Key Vault, Entra ID) with Managed Identity
+- [ ] **Type Safety First**: All code uses TypeScript strict mode, no `any` types without justification
+- [ ] **Security by Default**: Entra ID authentication enforced, tokens validated, no secrets in source control
+- [ ] **Infrastructure as Code**: Azure resources defined in Bicep with validation, no manual portal changes
+- [ ] **Developer Experience**: Changes work in Dev Container, pre-commit hooks pass, automation maintained
 
 ## Project Structure
 

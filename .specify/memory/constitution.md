@@ -1,73 +1,156 @@
-# [PROJECT_NAME] Constitution
+<!--
+  ============================================================================
+  SYNC IMPACT REPORT - Constitution Update to v1.0.0
+  ============================================================================
+  
+  VERSION CHANGE: None → 1.0.0 (Initial Ratification)
+  
+  MODIFIED PRINCIPLES:
+  - NEW: I. Cloud-Native Azure Integration
+  - NEW: II. Type Safety First
+  - NEW: III. Security by Default
+  - NEW: IV. Infrastructure as Code
+  - NEW: V. Developer Experience and Automation
+  
+  ADDED SECTIONS:
+  - Technology Standards (mandatory stack, forbidden patterns)
+  - Architectural Constraints (complexity limits, design patterns)
+  - Governance (amendment process, violation handling, periodic review)
+  
+  REMOVED SECTIONS:
+  - None (initial constitution)
+  
+  TEMPLATE UPDATES:
+  ✅ .specify/templates/plan-template.md - Updated Constitution Check gates
+  ✅ .specify/templates/spec-template.md - No changes required (already aligned)
+  ✅ .specify/templates/tasks-template.md - No changes required (already aligned)
+  ✅ .specify/templates/agent-file-template.md - No changes required
+  ✅ .specify/templates/checklist-template.md - No changes required
+  
+  FOLLOW-UP TODOS:
+  - None (all placeholders filled)
+  
+  RATIONALE FOR VERSION BUMP:
+  - 1.0.0 chosen as initial ratification version
+  - Principles derived from project README, package.json, infrastructure, and devcontainer configuration
+  - All 5 principles directly reflect current project practices and technology choices
+  
+  ============================================================================
+-->
 
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# TS Azure Health Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
+### I. Cloud-Native Azure Integration
 
-<!-- Example: I. Library-First -->
+All components must be designed for Azure cloud services with proper authentication, security, and observability. The application leverages Azure-managed services (Container Apps, Key Vault, Entra ID) rather than self-managed infrastructure.
 
-[PRINCIPLE_1_DESCRIPTION]
+**Rationale**: Enterprise applications require robust security, scalability, and compliance. Azure-native patterns ensure we benefit from Microsoft's security investments, managed identity systems, and compliance certifications while reducing operational overhead.
 
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+**Examples**:
+- ✅ Use Managed Identity for Azure resource access instead of connection strings
+- ✅ Store secrets in Azure Key Vault with proper RBAC instead of environment variables
+- ❌ Hardcode connection strings or API keys in configuration files
+- ❌ Build custom authentication when Entra ID provides enterprise-grade auth
 
-### [PRINCIPLE_2_NAME]
+### II. Type Safety First
 
-<!-- Example: II. CLI Interface -->
+TypeScript strict mode must be enforced across all code. No `any` types without explicit justification. All data models, API contracts, and configurations must have proper type definitions.
 
-[PRINCIPLE_2_DESCRIPTION]
+**Rationale**: Type safety prevents runtime errors, improves developer productivity through IntelliSense, and serves as living documentation. In enterprise applications handling sensitive data, compile-time guarantees reduce production incidents.
 
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Examples**:
+- ✅ Define interfaces for API responses and use them consistently
+- ✅ Enable `strict: true` and `noEmit: true` in TypeScript configuration
+- ❌ Use `any` type to bypass compiler errors
+- ❌ Skip type checking with `@ts-ignore` without documented justification
 
-### [PRINCIPLE_3_NAME]
+### III. Security by Default
 
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+Authentication and authorization must be enforced at every layer. Entra ID integration is mandatory for user authentication, with proper token validation. Secrets must never be committed to source control.
 
-[PRINCIPLE_3_DESCRIPTION]
+**Rationale**: Healthcare and enterprise applications must protect sensitive data and comply with regulations. Security cannot be retrofitted; it must be built into the foundation through proper authentication flows, token handling, and secret management.
 
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Examples**:
+- ✅ Implement On-Behalf-Of (OBO) flow for backend API calls
+- ✅ Validate access tokens on every API endpoint using MSAL
+- ❌ Disable authentication "temporarily" for development convenience
+- ❌ Store Azure credentials or tokens in .env files committed to Git
 
-### [PRINCIPLE_4_NAME]
+### IV. Infrastructure as Code
 
-<!-- Example: IV. Integration Testing -->
+All Azure resources must be defined in Bicep templates with proper parameterization, versioning, and validation. Manual Azure portal changes are prohibited for production resources.
 
-[PRINCIPLE_4_DESCRIPTION]
+**Rationale**: Infrastructure as Code ensures reproducibility, enables disaster recovery, facilitates testing in isolated environments, and provides audit trails. Manual changes lead to configuration drift and make scaling impossible.
 
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Examples**:
+- ✅ Define Container Apps, Key Vault, and Managed Identities in main.bicep
+- ✅ Use Bicep linting and validation in CI/CD pipelines
+- ❌ Create Azure resources manually through Azure Portal for production
+- ❌ Skip Bicep parameter files and hardcode environment-specific values
 
-### [PRINCIPLE_5_NAME]
+### V. Developer Experience and Automation
 
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+Development environments must be reproducible via Dev Containers. Code quality is enforced through automated linting, formatting, type checking, and pre-commit hooks. Manual setup steps are anti-patterns.
 
-[PRINCIPLE_5_DESCRIPTION]
+**Rationale**: Inconsistent development environments cause "works on my machine" problems. Automation reduces cognitive load, catches errors early, and ensures consistent code quality across team members, enabling faster onboarding and reducing review burden.
 
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**Examples**:
+- ✅ Provide complete Dev Container configuration with all tools pre-installed
+- ✅ Run ESLint, Prettier, and TypeScript checks automatically via husky hooks
+- ❌ Require developers to manually install Node.js, Azure CLI, or extensions
+- ❌ Skip linting rules or disable pre-commit hooks to speed up commits
 
-## [SECTION_2_NAME]
+## Technology Standards
 
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Mandatory Stack**:
+- Runtime: Node.js 22 LTS
+- Framework: Next.js 15 with App Router
+- Language: TypeScript 5.6+ with strict mode
+- Authentication: MSAL (Microsoft Authentication Library) for Entra ID
+- Azure SDK: @azure/identity and @azure/keyvault-secrets for Azure resource access
+- Infrastructure: Bicep for Azure resource definitions
+- Code Quality: ESLint 9, Prettier 3, Commitlint for conventional commits
 
-[SECTION_2_CONTENT]
+**Forbidden Patterns**:
+- No JavaScript files in src/ directories (TypeScript only)
+- No `any` types without JSDoc justification comment
+- No secrets in environment variables (use Key Vault)
+- No manual Azure resource creation for production
+- No commits bypassing pre-commit hooks without documented reason
 
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+## Architectural Constraints
 
-## [SECTION_3_NAME]
+**Complexity Limits**:
+- Maximum of 2 primary layers (frontend + infrastructure). No backend service layer unless explicitly required.
+- Minimize third-party packages. Prefer Azure SDK and Next.js built-ins over abstractions.
+- Maximum 3 layers of abstraction (e.g., Page → Service → Azure SDK)
+- TypeScript files should not exceed 300 lines. Extract modules when approaching this limit.
 
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Design Patterns**:
+- Prefer: Direct Azure SDK usage, Next.js API routes for BFF pattern, React Server Components
+- Avoid: Overly abstracted service layers, custom auth implementations, client-side secret management
+- Required: Separation of concerns (UI components, API routes, Azure integration utilities)
 
 ## Governance
 
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+**Amendment Process**:
+1. Propose constitutional changes via pull request to `.specify/memory/constitution.md`
+2. Include rationale and impact analysis in PR description
+3. Require approval from 2+ project maintainers
+4. Update version (major for principle changes, minor for clarifications)
+5. Document change in version history HTML comment
 
-[GOVERNANCE_RULES]
+**Violation Handling**:
+- Automated Enforcement: Pre-commit hooks, TypeScript compiler, Bicep linter, ESLint must pass
+- Code Review: Reviewers must verify alignment with principles before approval
+- Justified Exceptions: Document in code comments with pattern: `// CONSTITUTION EXCEPTION: [Principle Name] - [Justification]`
+- Technical Debt: Track constitutional violations as GitHub issues with `tech-debt` label
 
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+**Periodic Review**:
+- Review constitution quarterly or when major technology shifts occur
+- Ensure principles remain relevant to current project phase and team size
+- Update examples to reflect actual codebase patterns
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-01-06 | **Last Amended**: 2025-01-06
