@@ -21,6 +21,12 @@ param uamiName string = 'pwsh-health-fe-uami'
 @description('Public FQDN ingress (true = external)')
 param externalIngress bool = true
 
+@description('Azure Container Registry name (alphanumeric only)')
+param acrName string = 'acrtazurehealth'
+
+@description('Container image tag version')
+param imageTag string = 'latest'
+
 resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
@@ -41,6 +47,35 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: uamiName
   location: location
+}
+
+resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
+  name: acrName
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    adminUserEnabled: false
+    publicNetworkAccess: 'Enabled'
+    networkRuleBypassOptions: 'AzureServices'
+  }
+}
+
+// Grant UAMI the AcrPull role on the registry
+resource acrPullRoleDef 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  scope: subscription()
+  name: '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull
+}
+
+resource acrPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(acr.id, uami.id, acrPullRoleDef.name)
+  scope: acr
+  properties: {
+    principalId: uami.properties.principalId
+    roleDefinitionId: acrPullRoleDef.id
+    principalType: 'ServicePrincipal'
+  }
 }
 
 resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
@@ -70,7 +105,12 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
         external: externalIngress
         targetPort: 3000
       }
-      registries: []
+      registries: [
+        {
+          server: '${acrName}.azurecr.io'
+          identity: uami.id
+        }
+      ]
       secrets: []
       dapr: {
         enabled: false
@@ -79,7 +119,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
     template: {
       containers: [
         {
-          image: containerImage
+          image: '${acrName}.azurecr.io/ts-azure-health-frontend:${imageTag}'
           name: 'frontend'
           env: [
             { name: 'KV_URL', value: kv.properties.vaultUri }

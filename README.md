@@ -120,56 +120,182 @@ docker build -t ts-azure-health-frontend:latest .
 
 ## Deploy to Azure Container Apps
 
-### 1. Build and push container image
+This project includes automated CI/CD via GitHub Actions for deploying to Azure Container Registry and Azure Container Apps.
+
+### Automated Deployment (Recommended)
+
+#### Prerequisites
+
+1. **Azure Resources**: Create the resource group first:
+
+   ```bash
+   az login
+   az group create --name rg-azure-health --location eastus
+   ```
+
+2. **Azure Service Principal with Federated Credentials**: Create a User-Assigned Managed Identity for GitHub Actions authentication:
+
+   ```bash
+   # Create user-assigned managed identity for GitHub Actions
+   az identity create \
+     --name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health \
+     --location eastus
+
+   # Get the client ID and tenant ID
+   CLIENT_ID=$(az identity show \
+     --name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health \
+     --query clientId -o tsv)
+
+   TENANT_ID=$(az account show --query tenantId -o tsv)
+   SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+   echo "Client ID: $CLIENT_ID"
+   echo "Tenant ID: $TENANT_ID"
+   echo "Subscription ID: $SUBSCRIPTION_ID"
+   ```
+
+3. **Configure Federated Credentials**: Set up OIDC trust for GitHub Actions:
+
+   ```bash
+   # For develop branch
+   az identity federated-credential create \
+     --name github-actions-develop \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
+     --audiences api://AzureADTokenExchange
+
+   # For master branch (production)
+   az identity federated-credential create \
+     --name github-actions-master \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
+     --audiences api://AzureADTokenExchange
+   ```
+
+4. **Grant Permissions**: Assign necessary roles to the managed identity:
+
+   ```bash
+   # Contributor role for deployment
+   az role assignment create \
+     --assignee $CLIENT_ID \
+     --role Contributor \
+     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+
+   # AcrPush role for pushing images
+   az role assignment create \
+     --assignee $CLIENT_ID \
+     --role AcrPush \
+     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+   ```
+
+5. **Configure GitHub Secrets**: Add the following secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+
+   | Secret Name             | Value              | Description                |
+   | ----------------------- | ------------------ | -------------------------- |
+   | `AZURE_CLIENT_ID`       | `$CLIENT_ID`       | Managed identity client ID |
+   | `AZURE_TENANT_ID`       | `$TENANT_ID`       | Azure AD tenant ID         |
+   | `AZURE_SUBSCRIPTION_ID` | `$SUBSCRIPTION_ID` | Azure subscription ID      |
+
+6. **Run the Workflow**: Go to GitHub Actions → "Deploy Frontend to ACR and Azure Container Apps" → "Run workflow"
+
+   - Select environment: `develop` or `production`
+   - Click "Run workflow"
+
+#### Versioning Strategy
+
+The workflow automatically manages versioning based on the environment:
+
+**Production (master branch)**:
+
+- Uses semantic versioning from `frontend/package.json` (e.g., `1.2.3`)
+- Tags: `1.2.3`, `1.2`, `1`, `latest`
+- Example: `acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0`
+
+**Develop (develop branch)**:
+
+- Uses pre-release versioning with build numbers (e.g., `1.2.3-rc.123`)
+- Tags: `1.2.3-rc.123`, `develop`, `sha-abc1234`
+- Example: `acrtazurehealth.azurecr.io/ts-azure-health-frontend:0.1.0-rc.42`
+
+To bump the version, update the `version` field in `frontend/package.json` and commit to the respective branch.
+
+#### What the Workflow Does
+
+1. **Build Phase**:
+
+   - Reads version from `frontend/package.json`
+   - Generates appropriate tags based on environment
+   - Builds Docker image with multi-stage optimization
+   - Adds OCI-compliant labels (commit SHA, build date, version)
+   - Pushes to Azure Container Registry with multiple tags
+
+2. **Deploy Phase**:
+   - Authenticates to Azure using OIDC (federated credentials)
+   - Deploys Bicep infrastructure (ACR, Container App, Key Vault, etc.)
+   - Updates Container App with new image version
+   - Provides deployment summary with application URL
+
+### Manual Deployment (Alternative)
+
+If you prefer to deploy manually or need to troubleshoot:
+
+#### 1. Build and push container image
 
 ```bash
 # Login to Azure
 az login
 
-# Create or use existing ACR
-ACR_NAME="myacr"
-az acr login --name $ACR_NAME
+# Login to ACR
+az acr login --name acrtazurehealth
 
 # Build and push
 cd frontend/
-docker build -t ${ACR_NAME}.azurecr.io/ts-azure-health-frontend:latest .
-docker push ${ACR_NAME}.azurecr.io/ts-azure-health-frontend:latest
+docker build -t acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest .
+docker push acrtazurehealth.azurecr.io/ts-azure-health-frontend:latest
 ```
 
-### 2. Deploy infrastructure
+#### 2. Deploy infrastructure
 
 Deploy `infrastructure/main.bicep` with required parameters:
 
 ```bash
-az group create --name rg-ts-azure-health --location eastus
+az group create --name rg-azure-health --location eastus
 
 az deployment group create \
-  --resource-group rg-ts-azure-health \
+  --resource-group rg-azure-health \
   --template-file infrastructure/main.bicep \
   --parameters \
-    containerImage="${ACR_NAME}.azurecr.io/ts-azure-health-frontend:latest" \
+    imageTag="latest" \
     keyVaultName="kv-ts-azure-health-001" \
     containerAppName="app-ts-azure-health" \
     managedEnvName="env-ts-azure-health" \
-    uamiName="id-ts-azure-health"
+    uamiName="id-ts-azure-health" \
+    acrName="acrtazurehealth"
 ```
 
 This creates:
 
-- A user-assigned managed identity (UAMI)
+- An Azure Container Registry with managed identity authentication
+- A user-assigned managed identity (UAMI) with AcrPull and Key Vault access
 - A Key Vault with RBAC authorization
 - Container Apps Environment
-- A Container App bound to the UAMI with appropriate permissions
-- RBAC role assignment granting the UAMI "Key Vault Secrets User" access
+- A Container App with image pull authentication via managed identity
+- RBAC role assignments for ACR and Key Vault access
 
-### 3. Configure environment variables
+#### 3. Configure environment variables
 
 After deployment, add environment variables to your Container App through the Azure Portal or CLI:
 
 ```bash
 az containerapp update \
   --name app-ts-azure-health \
-  --resource-group rg-ts-azure-health \
+  --resource-group rg-azure-health \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
