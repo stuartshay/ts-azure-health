@@ -44,7 +44,7 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
   name: uamiName
   location: location
 }
