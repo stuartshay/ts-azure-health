@@ -6,7 +6,7 @@ const config: Configuration = {
     authority: `https://login.microsoftonline.com/${process.env.NEXT_PUBLIC_AAD_TENANT_ID}`,
     redirectUri: process.env.NEXT_PUBLIC_REDIRECT_URI,
   },
-  cache: { cacheLocation: "sessionStorage" }
+  cache: { cacheLocation: "sessionStorage" },
 };
 
 export const msal = new PublicClientApplication(config);

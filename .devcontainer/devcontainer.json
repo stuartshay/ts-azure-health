@@ -4,6 +4,14 @@
 
   // Features - Add development tools
   "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "automatic",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
     "ghcr.io/devcontainers/features/azure-cli:1": {
       "version": "latest"
     },
@@ -41,30 +49,63 @@
         // TypeScript and JavaScript
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-
+        "ms-vscode.vscode-typescript-next",
+        "yoavbls.pretty-ts-errors",
+        "usernamehw.errorlens",
+        
+        // React/Next.js
+        "dsznajder.es7-react-js-snippets",
+        "burkeholland.simple-react-snippets",
+        
         // Azure development
         "ms-azuretools.vscode-azureappservice",
         "ms-azuretools.vscode-azurefunctions",
         "ms-azuretools.vscode-azureresourcegroups",
         "ms-azuretools.vscode-bicep",
+        "ms-azuretools.vscode-azurecontainerapps",
+        "ms-azuretools.vscode-azurestorage",
         "ms-vscode.azure-account",
+        "ms-azuretools.azure-dev",
 
-        // Docker
+        // Docker & Containers
         "ms-azuretools.vscode-docker",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
 
         // Git and GitHub
         "github.vscode-pull-request-github",
+        "github.copilot",
+        "github.copilot-chat",
         "eamodio.gitlens",
+        "mhutchie.git-graph",
+
+        // Testing
+        "ms-playwright.playwright",
+        "orta.vscode-jest",
 
         // Development utilities
-        "ms-vscode.vscode-typescript-next",
         "visualstudioexptteam.vscodeintellicode",
         "christian-kohler.path-intellisense",
+        "christian-kohler.npm-intellisense",
         "ms-vscode.live-server",
+        "humao.rest-client",
+        "rangav.vscode-thunder-client",
 
         // Code quality
         "streetsidesoftware.code-spell-checker",
-        "editorconfig.editorconfig"
+        "editorconfig.editorconfig",
+        "aaron-bond.better-comments",
+        "wayou.vscode-todo-highlight",
+
+        // Productivity
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.makefile-tools",
+        "waderyan.gitblame",
+        "github.vscode-github-actions",
+        
+        // JSON & Configuration
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml",
+        "dotjoshjohnson.xml"
       ],
       "settings": {
         // Editor settings
@@ -84,6 +125,59 @@
         // ESLint settings
         "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
 
+        // Error Lens settings
+        "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+        "errorLens.excludeBySource": ["cSpell"],
+
+        // Better Comments settings
+        "better-comments.tags": [
+          {
+            "tag": "!",
+            "color": "#FF2D00",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+          },
+          {
+            "tag": "?",
+            "color": "#3498DB",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+          },
+          {
+            "tag": "//",
+            "color": "#474747",
+            "strikethrough": true,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+          },
+          {
+            "tag": "todo",
+            "color": "#FF8C00",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+          },
+          {
+            "tag": "*",
+            "color": "#98C379",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+          }
+        ],
+
         // File exclusions
         "files.exclude": {
           "**/.git": true,
@@ -93,11 +187,22 @@
         },
 
         // Terminal settings
-        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.defaultProfile.linux": "zsh",
 
         // Git settings
         "git.autofetch": true,
         "git.confirmSync": false,
+
+        // GitHub Copilot settings
+        "github.copilot.enable": {
+          "*": true,
+          "yaml": true,
+          "plaintext": false,
+          "markdown": true
+        },
+
+        // Makefile settings
+        "makefile.configureOnOpen": false,
 
         // Disable telemetry
         "telemetry.telemetryLevel": "off"
@@ -114,8 +219,5 @@
   },
 
   // Run as non-root user for security
-  "remoteUser": "node",
-
-  // Mount docker socket for docker-in-docker
-  "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"]
+  "remoteUser": "node"
 }

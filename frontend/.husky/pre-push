@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd frontend
+
+echo "🔍 Running type check..."
+npm run type-check
+
+echo "🏗️  Running build..."
+npm run build
+
+echo "📋 Validating Bicep..."
+cd ../infrastructure
+if command -v az &> /dev/null; then
+  az bicep build --file main.bicep
+else
+  echo "⚠️  Azure CLI not found, skipping Bicep validation"
+fi

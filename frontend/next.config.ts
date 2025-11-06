@@ -3,8 +3,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   experimental: {
     serverActions: {
-      allowedOrigins: ["*"]
-    }
-  }
+      allowedOrigins: ["*"],
+    },
+  },
 };
 export default nextConfig;

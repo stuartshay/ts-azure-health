@@ -27,7 +27,7 @@ export default function Home() {
       });
       const r = await fetch("/api/call-downstream", {
         method: "POST",
-        headers: { Authorization: `Bearer ${resp.accessToken}` }
+        headers: { Authorization: `Bearer ${resp.accessToken}` },
       });
       const t = await r.text();
       setStatus(`Downstream responded (${r.status}): ${t}`);

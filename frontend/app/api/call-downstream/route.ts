@@ -10,8 +10,8 @@ export async function POST(req: NextRequest) {
     auth: {
       clientId: process.env.AAD_BFF_CLIENT_ID!,
       clientSecret: process.env.AAD_BFF_CLIENT_SECRET!, // move to KV/MI later
-      authority: `https://login.microsoftonline.com/${process.env.AAD_TENANT_ID}`
-    }
+      authority: `https://login.microsoftonline.com/${process.env.AAD_TENANT_ID}`,
+    },
   });
 
   const result = await msal.acquireTokenOnBehalfOf({
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   const r = await fetch(process.env.DOWNSTREAM_API_URL!, {
     method: "GET",
-    headers: { Authorization: `Bearer ${result!.accessToken}` }
+    headers: { Authorization: `Bearer ${result!.accessToken}` },
   });
   const text = await r.text();
   return new Response(text, { status: r.status });
