@@ -1,8 +1,7 @@
 import { DefaultAzureCredential, ManagedIdentityCredential } from "@azure/identity";
 import { SecretClient } from "@azure/keyvault-secrets";
-import type { NextRequest } from "next/server";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   const credential = process.env.AZURE_CLIENT_ID
     ? new ManagedIdentityCredential(process.env.AZURE_CLIENT_ID)
     : new DefaultAzureCredential();

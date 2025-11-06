@@ -17,10 +17,24 @@
     "skipLibCheck": true,
     "types": [
       "node"
+    ],
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
     ]
   },
   "include": [
     "./**/*.ts",
-    "./**/*.tsx"
+    "./**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }
