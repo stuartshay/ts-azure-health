@@ -18,6 +18,7 @@ repos:
         args: ['--allow-multiple-documents']
       - id: check-json
         name: Check JSON syntax
+        exclude: '\.devcontainer/.*\.json$'
       - id: check-added-large-files
         name: Check for large files
         args: ['--maxkb=1000']

@@ -29,6 +29,7 @@ This will install the pre-commit hooks into your local git repository. The hooks
 ## Usage
 
 ### Automatic execution
+
 Once installed, the hooks will run automatically before each commit:
 
 ```bash
@@ -36,6 +37,7 @@ git commit -m "Your commit message"
 ```
 
 ### Manual execution
+
 To run the hooks manually on all files:
 
 ```bash
@@ -49,6 +51,7 @@ pre-commit run --files path/to/file1 path/to/file2
 ```
 
 ### Skip hooks (not recommended)
+
 If you need to commit without running hooks:
 
 ```bash
@@ -58,6 +61,7 @@ git commit --no-verify -m "Your commit message"
 ## Configured Hooks
 
 ### General File Quality
+
 - **trailing-whitespace**: Removes trailing whitespace (except in Markdown)
 - **end-of-file-fixer**: Ensures files end with a newline
 - **check-yaml**: Validates YAML syntax
@@ -68,25 +72,31 @@ git commit --no-verify -m "Your commit message"
 - **mixed-line-ending**: Ensures consistent line endings (LF)
 
 ### TypeScript/JavaScript
+
 - **eslint**: Lints TypeScript and JavaScript files in the frontend directory
 - **typescript-check**: Type-checks TypeScript files without emitting output
 
 ### Dockerfile
+
 - **hadolint-docker**: Lints Dockerfiles for best practices
 
 ### Formatting
+
 - **prettier**: Formats JSON, YAML, and Markdown files
 
 ## Troubleshooting
 
 ### Hook failures
+
 If a hook fails:
+
 1. Review the error message to understand what needs to be fixed
 2. Make the necessary changes
 3. Stage the changes: `git add <files>`
 4. Commit again: `git commit -m "Your message"`
 
 ### Updating hooks
+
 To update hooks to the latest versions:
 
 ```bash
@@ -94,6 +104,7 @@ pre-commit autoupdate
 ```
 
 ### Clean cache
+
 If you encounter issues with hook execution:
 
 ```bash
@@ -104,7 +115,9 @@ pre-commit install --install-hooks
 ## IDE Integration
 
 ### VS Code
+
 The devcontainer configuration includes settings for automatic formatting on save, which complements the pre-commit hooks:
+
 - ESLint auto-fix on save
 - Prettier formatting on save
 

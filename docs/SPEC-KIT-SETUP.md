@@ -5,6 +5,7 @@
 All required tools for the GitHub Spec-Kit framework have been successfully installed:
 
 ### ✅ Core Tools
+
 - **Node.js**: v24.4.1
 - **npm**: 11.5.1
 - **Vale**: v3.10.0 (prose linter)
@@ -14,6 +15,7 @@ All required tools for the GitHub Spec-Kit framework have been successfully inst
 - **specify-cli**: v0.0.20 (spec-kit CLI tool)
 
 ### 📦 Installation Locations
+
 - Vale: `/usr/local/bin/vale`
 - Spectral: Installed globally via npm
 - uv & specify: `~/.local/bin/` (added to PATH in `~/.zshrc`)
@@ -21,11 +23,13 @@ All required tools for the GitHub Spec-Kit framework have been successfully inst
 ## Project Structure
 
 Spec-kit has been initialized in your project at:
+
 ```
 /home/vagrant/git/ts-azure-health/ts-azure-health/
 ```
 
 ### Created Directories
+
 ```
 ts-azure-health/
 ├── .github/
@@ -43,6 +47,7 @@ ts-azure-health/
 Use these commands in GitHub Copilot to follow the spec-driven development workflow:
 
 ### Core Workflow (in order)
+
 1. `/speckit.constitution` - Establish project principles
 2. `/speckit.specify` - Create baseline specification
 3. `/speckit.plan` - Create implementation plan
@@ -50,6 +55,7 @@ Use these commands in GitHub Copilot to follow the spec-driven development workf
 5. `/speckit.implement` - Execute implementation
 
 ### Enhancement Commands (optional)
+
 - `/speckit.clarify` - Ask structured questions before planning
 - `/speckit.analyze` - Check cross-artifact consistency
 - `/speckit.checklist` - Generate quality validation checklists
@@ -57,13 +63,14 @@ Use these commands in GitHub Copilot to follow the spec-driven development workf
 ## Getting Started
 
 1. **Navigate to the spec-kit project:**
+
    ```bash
    cd /home/vagrant/git/ts-azure-health/ts-azure-health
    ```
 
 2. **Start with the constitution:**
    In GitHub Copilot, type: `/speckit.constitution`
-   
+
    This will help you establish the core principles and guidelines for your TypeScript project.
 
 3. **Follow the workflow:**
@@ -72,6 +79,7 @@ Use these commands in GitHub Copilot to follow the spec-driven development workf
 ## Verify Installation
 
 To verify all tools are working:
+
 ```bash
 # Check spec-kit requirements
 specify check
@@ -94,14 +102,17 @@ npm --version
 ## What is Spec-Driven Development?
 
 Spec-Driven Development flips traditional development on its head. Instead of:
+
 1. Write code
 2. Document later (maybe)
 
 You do:
+
 1. Write executable specifications
 2. Generate working implementations from specs
 
 This approach ensures:
+
 - Better documentation
 - Clearer requirements
 - More predictable outcomes

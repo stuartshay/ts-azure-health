@@ -1,6 +1,7 @@
 # TS Azure Health — Frontend Starter (Next.js + BFF + Key Vault + ACA)
 
 Minimal, production-friendly skeleton to:
+
 - Sign-in with Entra ID (MSAL PKCE).
 - Call a protected downstream API via a Back-End-for-Front-End (BFF) using On-Behalf-Of (OBO).
 - Read a secret from Azure Key Vault using Managed Identity (no secrets in the browser).
@@ -18,17 +19,20 @@ Minimal, production-friendly skeleton to:
 ## Quick start (local)
 
 1. Install Node 22 (LTS) and dependencies:
+
    ```bash
    cd frontend/
    npm install
    ```
 
 2. Copy `frontend/.env.example` to `frontend/.env.local` and fill in your Azure values:
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    You'll need to configure:
+
    - `NEXT_PUBLIC_AAD_CLIENT_ID` - Your SPA app registration client ID
    - `NEXT_PUBLIC_AAD_TENANT_ID` - Your Azure tenant ID
    - `AAD_BFF_CLIENT_ID` - Your BFF app registration client ID
@@ -41,12 +45,12 @@ Minimal, production-friendly skeleton to:
    ```bash
    npm run dev
    ```
-   
 4. Open http://localhost:3000
 
 ## Features & UI
 
 Buttons on the home page:
+
 - **Sign in** → MSAL popup sign-in with Entra ID (Azure AD).
 - **Call Protected API** → Sends your SPA token to the BFF, which performs OBO to call your downstream Function/API.
 - **Read KV Secret (server)** → BFF uses DefaultAzureCredential/Managed Identity to read `KV_SECRET_NAME` from Key Vault.
@@ -78,17 +82,20 @@ infrastructure/
 ## Building and Testing
 
 ### Build the project
+
 ```bash
 cd frontend/
 npm run build
 ```
 
 ### Lint the code
+
 ```bash
 npm run lint
 ```
 
 ### Build Docker container locally
+
 ```bash
 cd frontend/
 docker build -t ts-azure-health-frontend:latest .
@@ -131,6 +138,7 @@ az deployment group create \
 ```
 
 This creates:
+
 - A user-assigned managed identity (UAMI)
 - A Key Vault with RBAC authorization
 - Container Apps Environment
@@ -178,14 +186,17 @@ az containerapp update \
 ## Troubleshooting
 
 ### Build fails with "No root layout" error
+
 Make sure `frontend/app/layout.tsx` exists. This file was added as part of the implementation.
 
 ### MSAL authentication errors
+
 - Verify your app registrations in Azure AD
 - Check that redirect URIs are configured correctly
 - Ensure the API scopes are properly exposed and granted
 
 ### Key Vault access denied
+
 - Verify the managed identity has "Key Vault Secrets User" role
 - Check that the Key Vault URL and secret name are correct
 - Ensure the Container App is using the correct managed identity
@@ -193,4 +204,3 @@ Make sure `frontend/app/layout.tsx` exists. This file was added as part of the i
 ## License
 
 This is a starter template for educational and development purposes.
-

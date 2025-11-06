@@ -7,6 +7,7 @@ This directory contains the configuration for the development container used wit
 The devcontainer includes:
 
 ### Tools
+
 - **Node.js 22 (LTS)**: JavaScript/TypeScript runtime
 - **Azure CLI**: For Azure resource management
 - **GitHub CLI**: For GitHub operations
@@ -16,10 +17,12 @@ The devcontainer includes:
 ### VS Code Extensions
 
 #### TypeScript and JavaScript
+
 - ESLint - Code linting
 - Prettier - Code formatting
 
 #### Azure Development
+
 - Azure Account
 - Azure App Service
 - Azure Functions
@@ -27,13 +30,16 @@ The devcontainer includes:
 - Bicep - Infrastructure as Code
 
 #### Docker
+
 - Docker extension for container management
 
 #### Git and GitHub
+
 - GitHub Pull Requests and Issues
 - GitLens - Enhanced Git capabilities
 
 #### Development Utilities
+
 - TypeScript Next - Latest TypeScript features
 - IntelliCode - AI-assisted development
 - Path IntelliSense - Autocomplete for file paths
@@ -44,6 +50,7 @@ The devcontainer includes:
 ## Configuration
 
 The devcontainer:
+
 - Runs as the `node` user for security
 - Forwards port 3000 for the Next.js development server
 - Automatically runs `npm ci` in the frontend directory after container creation
@@ -54,16 +61,19 @@ The devcontainer:
 ## Usage
 
 ### VS Code
+
 1. Install the "Dev Containers" extension
 2. Open the repository in VS Code
 3. Click "Reopen in Container" when prompted, or use Command Palette (F1) → "Dev Containers: Reopen in Container"
 
 ### GitHub Codespaces
+
 The devcontainer configuration is automatically used when opening the repository in GitHub Codespaces.
 
 ## Customization
 
 To customize the devcontainer:
+
 - Edit `devcontainer.json` to add/remove features or extensions
 - Modify VS Code settings in the `customizations.vscode.settings` section
 - Update `postCreateCommand` to change initialization behavior

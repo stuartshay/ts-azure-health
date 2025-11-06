@@ -1,7 +1,7 @@
 {
   "name": "TS Azure Health - Development Environment",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
-  
+
   // Features - Add development tools
   "features": {
     "ghcr.io/devcontainers/features/azure-cli:1": {
@@ -41,27 +41,27 @@
         // TypeScript and JavaScript
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        
+
         // Azure development
         "ms-azuretools.vscode-azureappservice",
         "ms-azuretools.vscode-azurefunctions",
         "ms-azuretools.vscode-azureresourcegroups",
         "ms-azuretools.vscode-bicep",
         "ms-vscode.azure-account",
-        
+
         // Docker
         "ms-azuretools.vscode-docker",
-        
+
         // Git and GitHub
         "github.vscode-pull-request-github",
         "eamodio.gitlens",
-        
+
         // Development utilities
         "ms-vscode.vscode-typescript-next",
         "visualstudioexptteam.vscodeintellicode",
         "christian-kohler.path-intellisense",
         "ms-vscode.live-server",
-        
+
         // Code quality
         "streetsidesoftware.code-spell-checker",
         "editorconfig.editorconfig"
@@ -75,20 +75,15 @@
         },
         "editor.tabSize": 2,
         "editor.insertSpaces": true,
-        
+
         // TypeScript settings
         "typescript.updateImportsOnFileMove.enabled": "always",
         "typescript.preferences.importModuleSpecifier": "relative",
         "typescript.suggest.autoImports": true,
-        
+
         // ESLint settings
-        "eslint.validate": [
-          "javascript",
-          "javascriptreact",
-          "typescript",
-          "typescriptreact"
-        ],
-        
+        "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+
         // File exclusions
         "files.exclude": {
           "**/.git": true,
@@ -96,14 +91,14 @@
           "**/node_modules": true,
           "**/.next": true
         },
-        
+
         // Terminal settings
         "terminal.integrated.defaultProfile.linux": "bash",
-        
+
         // Git settings
         "git.autofetch": true,
         "git.confirmSync": false,
-        
+
         // Disable telemetry
         "telemetry.telemetryLevel": "off"
       }
@@ -122,7 +117,5 @@
   "remoteUser": "node",
 
   // Mount docker socket for docker-in-docker
-  "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-  ]
+  "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"]
 }
