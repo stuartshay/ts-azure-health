@@ -1,5 +1,7 @@
 # TS Azure Health — Frontend Starter (Next.js + BFF + Key Vault + ACA)
 
+[![Deploy Frontend to ACR and Azure Container Apps](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml)
+
 Minimal, production-friendly skeleton to:
 
 - Sign-in with Entra ID (MSAL PKCE).
@@ -120,32 +122,54 @@ docker build -t ts-azure-health-frontend:latest .
 
 ## Deploy to Azure Container Apps
 
-This project includes automated CI/CD via GitHub Actions for deploying to Azure Container Registry and Azure Container Apps.
+This project supports multi-environment deployments using infrastructure as code (Bicep) with separate dev and prod environments.
 
-### Automated Deployment (Recommended)
+### Architecture Overview
+
+Each environment has isolated resources:
+
+- **Development (dev)**
+  - Resource Group: `rg-ts-azure-health-dev`
+  - Container App: `app-tsazurehealth-dev`
+  - Key Vault: `kv-tsazurehealth-dev-<unique>`
+  - Managed Identity: `id-tsazurehealth-dev`
+
+- **Production (prod)**
+  - Resource Group: `rg-ts-azure-health-prod`
+  - Container App: `app-tsazurehealth-prod`
+  - Key Vault: `kv-tsazurehealth-prod-<unique>`
+  - Managed Identity: `id-tsazurehealth-prod`
+
+### Deployment Methods
+
+You can deploy infrastructure using either:
+1. **GitHub Actions workflows** (recommended for CI/CD)
+2. **Local CLI scripts** (recommended for local development and testing)
+
+---
+
+### Method 1: GitHub Actions Deployment (Recommended)
 
 #### Prerequisites
 
-1. **Azure Resources**: Create the resource group first:
+1. **Azure Service Principal with Federated Credentials**: Create a User-Assigned Managed Identity for GitHub Actions authentication:
 
    ```bash
    az login
-   az group create --name rg-azure-health --location eastus
-   ```
+   
+   # Create resource group for GitHub Actions identity
+   az group create --name rg-ts-azure-health-github --location eastus
 
-2. **Azure Service Principal with Federated Credentials**: Create a User-Assigned Managed Identity for GitHub Actions authentication:
-
-   ```bash
    # Create user-assigned managed identity for GitHub Actions
    az identity create \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health \
+     --resource-group rg-ts-azure-health-github \
      --location eastus
 
    # Get the client ID and tenant ID
    CLIENT_ID=$(az identity show \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health \
+     --resource-group rg-ts-azure-health-github \
      --query clientId -o tsv)
 
    TENANT_ID=$(az account show --query tenantId -o tsv)
@@ -156,14 +180,14 @@ This project includes automated CI/CD via GitHub Actions for deploying to Azure 
    echo "Subscription ID: $SUBSCRIPTION_ID"
    ```
 
-3. **Configure Federated Credentials**: Set up OIDC trust for GitHub Actions:
+2. **Configure Federated Credentials**: Set up OIDC trust for GitHub Actions:
 
    ```bash
    # For develop branch
    az identity federated-credential create \
      --name github-actions-develop \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health \
+     --resource-group rg-ts-azure-health-github \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
      --audiences api://AzureADTokenExchange
@@ -172,20 +196,20 @@ This project includes automated CI/CD via GitHub Actions for deploying to Azure 
    az identity federated-credential create \
      --name github-actions-master \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health \
+     --resource-group rg-ts-azure-health-github \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
      --audiences api://AzureADTokenExchange
    ```
 
-4. **Grant Permissions**: Assign necessary roles to the managed identity:
+3. **Grant Permissions**: Assign necessary roles to the managed identity:
 
    ```bash
-   # Contributor role for deployment
+   # Contributor role for subscription (allows creating resource groups)
    az role assignment create \
      --assignee $CLIENT_ID \
      --role Contributor \
-     --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+     --scope /subscriptions/$SUBSCRIPTION_ID
 
    # AcrPush role for pushing images to existing ACR
    az role assignment create \
@@ -194,7 +218,7 @@ This project includes automated CI/CD via GitHub Actions for deploying to Azure 
      --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/AzureConnectedServices-RG/providers/Microsoft.ContainerRegistry/registries/azureconnectedservicesacr
    ```
 
-5. **Configure GitHub Secrets**: Add the following secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+4. **Configure GitHub Secrets**: Add the following secrets to your GitHub repository (Settings → Secrets and variables → Actions):
 
    | Secret Name             | Value              | Description                |
    | ----------------------- | ------------------ | -------------------------- |
@@ -202,14 +226,52 @@ This project includes automated CI/CD via GitHub Actions for deploying to Azure 
    | `AZURE_TENANT_ID`       | `$TENANT_ID`       | Azure AD tenant ID         |
    | `AZURE_SUBSCRIPTION_ID` | `$SUBSCRIPTION_ID` | Azure subscription ID      |
 
-6. **Run the Workflow**: Go to GitHub Actions → "Deploy Frontend to ACR and Azure Container Apps" → "Run workflow"
+5. **Set up GitHub Environments**: Create `dev` and `prod` environments in GitHub (Settings → Environments) for deployment approvals (optional for prod).
 
-   - Select environment: `develop` or `production`
-   - Click "Run workflow"
+#### Available Workflows
+
+**Infrastructure Management:**
+
+- **Deploy Infrastructure** (`infrastructure-deploy.yml`)
+  - Go to Actions → "Deploy Infrastructure" → "Run workflow"
+  - Select environment: `dev` or `prod`
+  - Deploys all Azure resources using Bicep
+
+- **Destroy Infrastructure** (`infrastructure-destroy.yml`)
+  - Go to Actions → "Destroy Infrastructure" → "Run workflow"
+  - Select environment: `dev` or `prod`
+  - Deletes all resources in the environment
+
+- **Infrastructure What-If** (`infrastructure-whatif.yml`)
+  - Automatically runs on PRs that modify infrastructure files
+  - Shows preview of changes without deploying
+
+**Application Deployment:**
+
+- **Deploy Frontend** (`deploy-frontend.yml`)
+  - Go to Actions → "Deploy Frontend to ACR and Azure Container Apps" → "Run workflow"
+  - Select environment: `develop` or `production`
+  - Builds Docker image, pushes to ACR, and updates Container App
+
+#### Deployment Workflow
+
+1. **Deploy Infrastructure First:**
+   ```
+   Actions → Deploy Infrastructure → Select "dev" → Run workflow
+   ```
+
+2. **Deploy Application:**
+   ```
+   Actions → Deploy Frontend → Select "develop" → Run workflow
+   ```
+
+3. **Verify Deployment:**
+   - Check the workflow summary for the Container App URL
+   - Visit the URL to verify the application is running
 
 #### Versioning Strategy
 
-The workflow automatically manages versioning based on the environment:
+The frontend deployment workflow automatically manages versioning based on the environment:
 
 **Production (master branch)**:
 
@@ -237,9 +299,90 @@ To bump the version, update the `version` field in `frontend/package.json` and c
 
 2. **Deploy Phase**:
    - Authenticates to Azure using OIDC (federated credentials)
-   - Deploys Bicep infrastructure (ACR, Container App, Key Vault, etc.)
    - Updates Container App with new image version
    - Provides deployment summary with application URL
+
+---
+
+### Method 2: Local CLI Scripts
+
+For local development and testing, use the Bash scripts in `scripts/infrastructure/`:
+
+#### Prerequisites
+
+- Azure CLI installed and authenticated (`az login`)
+- Bash shell (Linux, macOS, WSL, or Git Bash on Windows)
+- jq installed for JSON parsing
+- Appropriate Azure permissions (Contributor role)
+
+#### Available Scripts
+
+1. **Deploy Infrastructure:**
+   ```bash
+   # Deploy to dev environment
+   ./scripts/infrastructure/deploy-bicep.sh
+
+   # Deploy to production
+   ./scripts/infrastructure/deploy-bicep.sh -e prod -l westus2
+
+   # Preview changes without deploying
+   ./scripts/infrastructure/deploy-bicep.sh --whatif
+   ```
+
+2. **Preview Changes (What-If):**
+   ```bash
+   # Preview dev environment changes
+   ./scripts/infrastructure/whatif-bicep.sh
+
+   # Preview prod environment changes
+   ./scripts/infrastructure/whatif-bicep.sh -e prod
+   ```
+
+3. **Destroy Infrastructure:**
+   ```bash
+   # Destroy dev environment (requires confirmation)
+   ./scripts/infrastructure/destroy-bicep.sh
+
+   # Destroy prod environment
+   ./scripts/infrastructure/destroy-bicep.sh -e prod
+   ```
+
+#### Local Deployment Workflow
+
+1. **Preview what will be created:**
+   ```bash
+   ./scripts/infrastructure/whatif-bicep.sh -e dev
+   ```
+
+2. **Deploy infrastructure:**
+   ```bash
+   ./scripts/infrastructure/deploy-bicep.sh -e dev
+   ```
+
+3. **Deploy frontend application** (after infrastructure is ready):
+   ```bash
+   # Build and push Docker image
+   cd frontend
+   docker build -t azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest .
+   az acr login --name azureconnectedservicesacr
+   docker push azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
+   
+   # Update Container App
+   az containerapp update \
+     --name app-tsazurehealth-dev \
+     --resource-group rg-ts-azure-health-dev \
+     --image azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
+   ```
+
+4. **View deployment details:**
+   ```bash
+   az resource list --resource-group rg-ts-azure-health-dev --output table
+   az containerapp show --name app-tsazurehealth-dev --resource-group rg-ts-azure-health-dev
+   ```
+
+See [scripts/infrastructure/README.md](scripts/infrastructure/README.md) for detailed documentation on local scripts.
+
+---
 
 ### Manual Deployment (Alternative)
 
@@ -262,22 +405,25 @@ docker push azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
 
 #### 2. Deploy infrastructure
 
-Deploy `infrastructure/main.bicep` with required parameters:
+Deploy `infrastructure/main.bicep` using environment-specific parameter files:
 
 ```bash
-az group create --name rg-azure-health --location eastus
+# Create resource group for dev environment
+az group create --name rg-ts-azure-health-dev --location eastus
+
+# Deploy infrastructure to dev
+az deployment group create \
+  --resource-group rg-ts-azure-health-dev \
+  --template-file infrastructure/main.bicep \
+  --parameters infrastructure/dev.bicepparam
+
+# Or for production
+az group create --name rg-ts-azure-health-prod --location eastus
 
 az deployment group create \
-  --resource-group rg-azure-health \
+  --resource-group rg-ts-azure-health-prod \
   --template-file infrastructure/main.bicep \
-  --parameters \
-    imageTag="latest" \
-    keyVaultName="kv-ts-azure-health-001" \
-    containerAppName="app-ts-azure-health" \
-    managedEnvName="env-ts-azure-health" \
-    uamiName="id-ts-azure-health" \
-    acrName="azureconnectedservicesacr" \
-    acrResourceGroup="AzureConnectedServices-RG"
+  --parameters infrastructure/prod.bicepparam
 ```
 
 This creates:
@@ -294,9 +440,22 @@ This creates:
 After deployment, add environment variables to your Container App through the Azure Portal or CLI:
 
 ```bash
+# For dev environment
 az containerapp update \
-  --name app-ts-azure-health \
-  --resource-group rg-azure-health \
+  --name app-tsazurehealth-dev \
+  --resource-group rg-ts-azure-health-dev \
+  --set-env-vars \
+    "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
+    "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
+    "AAD_BFF_CLIENT_ID=<your-bff-client-id>" \
+    "AAD_BFF_CLIENT_SECRET=secretref:<secret-name>" \
+    "AAD_TENANT_ID=<your-tenant-id>" \
+    "KV_SECRET_NAME=<your-secret-name>"
+
+# For prod environment
+az containerapp update \
+  --name app-tsazurehealth-prod \
+  --resource-group rg-ts-azure-health-prod \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
@@ -305,6 +464,25 @@ az containerapp update \
     "AAD_TENANT_ID=<your-tenant-id>" \
     "KV_SECRET_NAME=<your-secret-name>"
 ```
+
+## Infrastructure as Code
+
+This project uses Bicep templates for infrastructure management:
+
+- **`infrastructure/main.bicep`** - Main infrastructure template
+- **`infrastructure/dev.bicepparam`** - Development environment parameters
+- **`infrastructure/prod.bicepparam`** - Production environment parameters
+- **`infrastructure/modules/`** - Reusable Bicep modules
+
+The infrastructure supports:
+- Multi-environment deployments (dev, staging, prod)
+- Automatic resource naming with environment suffixes
+- RBAC-based access control
+- Managed identities for secure authentication
+- Container Apps for scalable hosting
+- Azure Key Vault for secrets management
+
+See [infrastructure/README.md](infrastructure/README.md) and [scripts/infrastructure/README.md](scripts/infrastructure/README.md) for detailed documentation.
 
 ## Security Notes
 

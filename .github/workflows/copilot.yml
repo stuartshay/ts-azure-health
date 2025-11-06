@@ -1,0 +1,41 @@
+name: Copilot Coding Agent Setup
+
+# This workflow configures the environment for GitHub Copilot coding agent
+# Setup steps run BEFORE the firewall is enabled, allowing access to required resources
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  setup:
+    name: Setup Copilot Environment
+    runs-on: ubuntu-latest
+    
+    steps:
+      # These steps run BEFORE firewall restrictions
+      - name: Setup Azure Bicep CLI
+        run: |
+          # Install Bicep CLI
+          curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64
+          chmod +x ./bicep
+          sudo mv ./bicep /usr/local/bin/bicep
+          
+          # Verify installation
+          bicep --version
+          
+      - name: Setup Azure CLI
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        continue-on-error: true
+        
+      - name: Cache Bicep modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.azure/bicep
+          key: bicep-modules-${{ runner.os }}-${{ hashFiles('infrastructure/**/*.bicep') }}
+          restore-keys: |
+            bicep-modules-${{ runner.os }}-
