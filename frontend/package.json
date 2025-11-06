@@ -19,7 +19,7 @@
     "@azure/keyvault-secrets": "^4.9.0",
     "@azure/msal-browser": "^4.26.1",
     "@azure/msal-node": "^3.8.1",
-    "next": "^15.0.3",
+    "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -29,7 +29,7 @@
     "@types/node": "^22.7.5",
     "@types/react": "^19.2.2",
     "eslint": "^9.12.0",
-    "eslint-config-next": "^15.0.3",
+    "eslint-config-next": "^16.0.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.6",
     "lint-staged": "^15.2.10",
