@@ -31,6 +31,9 @@ param currentDate string = utcNow('yyyy-MM-dd')
 
 // Generate unique names based on environment
 var uniqueSuffix = uniqueString(resourceGroup().id)
+// Note: Key Vault names are limited to 24 characters and must be globally unique
+// The take() function ensures we don't exceed this limit by truncating if needed
+// Format: kv-{baseName}-{env}-{unique} where unique is 13 chars from uniqueString()
 var keyVaultName = take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
 var containerAppName = 'app-${baseName}-${environment}'
 var managedEnvName = 'env-${baseName}-${environment}'

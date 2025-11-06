@@ -97,7 +97,7 @@ echo -e ""
 
 # Check if resource group exists
 echo -e "${CYAN}Checking if resource group exists...${NC}"
-if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
+if ! az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
   echo -e "${YELLOW}Resource group does not exist: $RESOURCE_GROUP${NC}"
   echo -e "${GRAY}Nothing to delete.${NC}"
   exit 0
