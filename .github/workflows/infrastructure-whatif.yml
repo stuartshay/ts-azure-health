@@ -28,6 +28,7 @@ permissions:
 env:
   MAX_RETRY_ATTEMPTS: 5
   RETRY_BASE_DELAY: 2
+  LOCATION: eastus
 
 jobs:
   whatif:
@@ -165,7 +166,7 @@ jobs:
           # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
-            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
             echo "Skipping what-if for dev environment."
             exit 0
           fi
@@ -202,7 +203,7 @@ jobs:
           # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
-            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
             echo "Skipping what-if for staging environment."
             exit 0
           fi
@@ -239,7 +240,7 @@ jobs:
           # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
-            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
             echo "Skipping what-if for prod environment."
             exit 0
           fi
