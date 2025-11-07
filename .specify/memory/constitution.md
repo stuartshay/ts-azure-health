@@ -1,39 +1,56 @@
 <!--
   ============================================================================
-  SYNC IMPACT REPORT - Constitution Update to v1.0.0
+  SYNC IMPACT REPORT - Constitution Update to v1.0.1
   ============================================================================
 
-  VERSION CHANGE: None → 1.0.0 (Initial Ratification)
+  VERSION CHANGE: 1.0.0 → 1.1.0 (Pre-commit Hook Enforcement)
 
   MODIFIED PRINCIPLES:
-  - NEW: I. Cloud-Native Azure Integration
-  - NEW: II. Type Safety First
-  - NEW: III. Security by Default
-  - NEW: IV. Infrastructure as Code
-  - NEW: V. Developer Experience and Automation
+  - EXPANDED: V. Developer Experience and Automation - Strengthened pre-commit hook requirements
+    * Made pre-commit hooks mandatory (not optional)
+    * Emphasized continuous enforcement throughout development
+    * Added explicit prohibition against bypassing hooks
 
   ADDED SECTIONS:
-  - Technology Standards (mandatory stack, forbidden patterns)
-  - Architectural Constraints (complexity limits, design patterns)
-  - Governance (amendment process, violation handling, periodic review)
+  - None
 
   REMOVED SECTIONS:
-  - None (initial constitution)
+  - None
 
   TEMPLATE UPDATES:
-  ✅ .specify/templates/plan-template.md - Updated Constitution Check gates
-  ✅ .specify/templates/spec-template.md - No changes required (already aligned)
-  ✅ .specify/templates/tasks-template.md - No changes required (already aligned)
-  ✅ .specify/templates/agent-file-template.md - No changes required
-  ✅ .specify/templates/checklist-template.md - No changes required
+  ✅ .specify/templates/plan-template.md - Verified Constitution Check alignment
+  ✅ .specify/templates/spec-template.md - Verified alignment (no changes needed)
+  ✅ .specify/templates/tasks-template.md - Verified alignment (no changes needed)
+  ✅ .specify/templates/agent-file-template.md - Verified alignment (no changes needed)
+  ✅ .specify/templates/checklist-template.md - Verified alignment (no changes needed)
 
   FOLLOW-UP TODOS:
-  - None (all placeholders filled)
+  - None (all placeholders filled, all templates aligned)
 
   RATIONALE FOR VERSION BUMP:
-  - 1.0.0 chosen as initial ratification version
-  - Principles derived from project README, package.json, infrastructure, and devcontainer configuration
-  - All 5 principles directly reflect current project practices and technology choices
+  - MINOR bump (1.1.0) for material expansion of Principle V guidance
+  - Pre-commit hooks elevated from automation practice to mandatory requirement
+  - Updated LAST_AMENDED_DATE to 2025-11-07 (current date)
+  - Confirmed all principles remain relevant to current project phase
+  - Verified technology standards match current stack:
+    * Node.js 22 LTS ✓
+    * Next.js 16 ✓ (updated from 15)
+    * TypeScript 5.6+ ✓
+    * React 19 ✓ (updated from 18)
+    * MSAL for Entra ID ✓
+    * Azure SDK (@azure/identity, @azure/keyvault-secrets) ✓
+    * Bicep for IaC ✓
+    * ESLint 9, Prettier 3, Commitlint ✓
+  - All examples remain accurate and reflect actual codebase patterns
+  - No violations or deferred items detected
+
+  VALIDATION FINDINGS:
+  - Constitution principles actively enforced through pre-commit hooks
+  - Dev Container configuration aligns with Principle V
+  - Infrastructure as Code fully implemented in Bicep templates
+  - Type safety enforced (TypeScript strict mode enabled)
+  - Security patterns followed (Entra ID, Key Vault, Managed Identity)
+  - Documentation up-to-date with current architecture
 
   ============================================================================
 -->
@@ -96,28 +113,42 @@ All Azure resources must be defined in Bicep templates with proper parameterizat
 
 ### V. Developer Experience and Automation
 
-Development environments must be reproducible via Dev Containers. Code quality is enforced through automated linting, formatting, type checking, and pre-commit hooks. Manual setup steps are anti-patterns.
+Development environments must be reproducible via Dev Containers. Code quality is enforced through mandatory pre-commit hooks that run automated linting, formatting, type checking, and validation on every commit. Pre-commit hooks are NOT optional and must never be bypassed. Manual setup steps are anti-patterns.
 
-**Rationale**: Inconsistent development environments cause "works on my machine" problems. Automation reduces cognitive load, catches errors early, and ensures consistent code quality across team members, enabling faster onboarding and reducing review burden.
+**Rationale**: Inconsistent development environments cause "works on my machine" problems. Pre-commit hooks provide the earliest possible failure point, catching errors before they enter the repository. This reduces CI/CD failures, prevents broken builds, improves code review efficiency, and ensures consistent quality standards across all team members. Automation reduces cognitive load and enables faster onboarding.
+
+**Pre-commit Hook Requirements**:
+
+- MUST be installed and configured in every development environment
+- MUST run on every commit without exception
+- MUST include: code linting (ESLint), formatting (Prettier), type checking (TypeScript), file quality checks
+- MUST fail the commit if any check fails
+- MUST be configured via `.pre-commit-config.yaml` at repository root
 
 **Examples**:
 
-- ✅ Provide complete Dev Container configuration with all tools pre-installed
-- ✅ Run ESLint, Prettier, and TypeScript checks automatically via husky hooks
-- ❌ Require developers to manually install Node.js, Azure CLI, or extensions
-- ❌ Skip linting rules or disable pre-commit hooks to speed up commits
+- ✅ Install pre-commit hooks automatically in Dev Container setup
+- ✅ Run ESLint, Prettier, TypeScript, and file checks via pre-commit framework
+- ✅ Fail commits that violate linting, formatting, or type checking rules
+- ✅ Document pre-commit installation in README and development setup guides
+- ❌ Allow commits without pre-commit hooks installed
+- ❌ Use `--no-verify` flag to skip pre-commit checks (requires CONSTITUTION EXCEPTION comment)
+- ❌ Disable or comment out pre-commit checks "temporarily"
+- ❌ Require developers to manually run linting/formatting before commits
 
 ## Technology Standards
 
 **Mandatory Stack**:
 
 - Runtime: Node.js 22 LTS
-- Framework: Next.js 15 with App Router
+- Framework: Next.js 16 with App Router
 - Language: TypeScript 5.6+ with strict mode
+- UI Library: React 19
 - Authentication: MSAL (Microsoft Authentication Library) for Entra ID
 - Azure SDK: @azure/identity and @azure/keyvault-secrets for Azure resource access
 - Infrastructure: Bicep for Azure resource definitions
 - Code Quality: ESLint 9, Prettier 3, Commitlint for conventional commits
+- Pre-commit Framework: pre-commit with hooks for linting, formatting, type checking, and file validation
 
 **Forbidden Patterns**:
 
@@ -125,7 +156,9 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - No `any` types without JSDoc justification comment
 - No secrets in environment variables (use Key Vault)
 - No manual Azure resource creation for production
-- No commits bypassing pre-commit hooks without documented reason
+- No commits without pre-commit hooks installed and running
+- No use of `git commit --no-verify` or `SKIP=` environment variable to bypass pre-commit hooks (requires CONSTITUTION EXCEPTION in commit message if absolutely necessary)
+- No disabling or removing pre-commit hook configurations without architectural review
 
 ## Architectural Constraints
 
@@ -154,8 +187,9 @@ Development environments must be reproducible via Dev Containers. Code quality i
 
 **Violation Handling**:
 
-- Automated Enforcement: Pre-commit hooks, TypeScript compiler, Bicep linter, ESLint must pass
-- Code Review: Reviewers must verify alignment with principles before approval
+- Automated Enforcement: Pre-commit hooks MUST be installed and MUST pass on every commit. TypeScript compiler, Bicep linter, ESLint must pass.
+- Pre-commit Verification: If a commit bypasses hooks (--no-verify), it MUST include "CONSTITUTION EXCEPTION" in the commit message with justification
+- Code Review: Reviewers must verify alignment with principles before approval and check for hook bypasses
 - Justified Exceptions: Document in code comments with pattern: `// CONSTITUTION EXCEPTION: [Principle Name] - [Justification]`
 - Technical Debt: Track constitutional violations as GitHub issues with `tech-debt` label
 
@@ -165,4 +199,4 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - Ensure principles remain relevant to current project phase and team size
 - Update examples to reflect actual codebase patterns
 
-**Version**: 1.0.0 | **Ratified**: 2025-01-06 | **Last Amended**: 2025-01-06
+**Version**: 1.1.0 | **Ratified**: 2025-01-06 | **Last Amended**: 2025-11-07

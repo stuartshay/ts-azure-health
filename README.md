@@ -161,19 +161,16 @@ You can deploy infrastructure using either:
    ```bash
    az login
 
-   # Create resource group for GitHub Actions identity
-   az group create --name rg-ts-azure-health-github --location eastus
-
-   # Create user-assigned managed identity for GitHub Actions
+   # Create user-assigned managed identity for GitHub Actions in dev resource group
    az identity create \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-dev \
      --location eastus
 
    # Get the client ID and tenant ID
    CLIENT_ID=$(az identity show \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-dev \
      --query clientId -o tsv)
 
    TENANT_ID=$(az account show --query tenantId -o tsv)
@@ -191,7 +188,7 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-develop \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-dev \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
      --audiences api://AzureADTokenExchange
@@ -200,7 +197,7 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-master \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-dev \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
      --audiences api://AzureADTokenExchange
