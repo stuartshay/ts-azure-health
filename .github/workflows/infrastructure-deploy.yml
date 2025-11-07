@@ -133,35 +133,17 @@ jobs:
           chmod +x /tmp/retry-utils.sh
           echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
 
-      - name: Create resource group if not exists
+      - name: Verify resource group exists
         shell: bash
         run: |
-          source /tmp/retry-utils.sh
-
-          # Check if resource group exists (use az group show instead of exists for reliability)
-          if az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "✅ Resource group already exists: $RESOURCE_GROUP"
-            exit 0
-          fi
-
-          # Create resource group with retry logic
-          echo "📦 Creating resource group: $RESOURCE_GROUP"
-          retry_azure_operation \
-            "$MAX_RETRY_ATTEMPTS" \
-            "Create resource group $RESOURCE_GROUP" \
-            az group create \
-              --name "$RESOURCE_GROUP" \
-              --location "$LOCATION" \
-              --tags environment=${{ github.event.inputs.environment }} project=ts-azure-health \
-              --output none
-
-          # Verify resource group was created
-          echo "🔍 Verifying resource group creation..."
+          # Check if resource group exists
           if ! az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "❌ Resource group verification failed: $RESOURCE_GROUP was not created"
+            echo "❌ Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with:"
+            echo "  az group create --name $RESOURCE_GROUP --location $LOCATION --tags environment=${{ github.event.inputs.environment }}"
             exit 1
           fi
-          echo "✅ Resource group verified: $RESOURCE_GROUP"
+          echo "✅ Resource group exists: $RESOURCE_GROUP"
 
       - name: Deploy Bicep template
         id: deploy
