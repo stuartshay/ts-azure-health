@@ -37,11 +37,7 @@
     "typescript": "^5.6.3"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "next lint --fix --file",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
+    "*.{ts,tsx,json,md}": [
       "prettier --write"
     ]
   }

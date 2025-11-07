@@ -73,7 +73,6 @@
         "ms-azuretools.vscode-bicep",
         "ms-azuretools.vscode-azurecontainerapps",
         "ms-azuretools.vscode-azurestorage",
-        "ms-vscode.azure-account",
         "ms-azuretools.azure-dev",
 
         // Docker & Containers
@@ -110,6 +109,10 @@
         "ms-vscode.makefile-tools",
         "waderyan.gitblame",
         "github.vscode-github-actions",
+
+        // AI
+        "saoudrizwan.claude-de",
+        "openai.chatgpt",
 
         // JSON & Configuration
         "tamasfe.even-better-toml",
