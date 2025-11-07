@@ -5,6 +5,7 @@ This directory contains Infrastructure as Code (IaC) using Azure Bicep templates
 ## Overview
 
 The infrastructure supports multi-environment deployments with environment-specific configurations for:
+
 - **Development (dev)** - For testing and development
 - **Staging (staging)** - For pre-production validation (optional)
 - **Production (prod)** - For production workloads
@@ -38,6 +39,7 @@ These files use the Bicep parameter file format (`.bicepparam`) and reference th
 Resources are named using the pattern: `{resource-type}-{baseName}-{environment}-{uniqueSuffix}`
 
 **Example for dev environment:**
+
 - Resource Group: `rg-azure-health-dev`
 - Container App: `app-tsazurehealth-dev`
 - Key Vault: `kv-tsazurehealth-dev-abc123` (with unique suffix)
@@ -45,6 +47,7 @@ Resources are named using the pattern: `{resource-type}-{baseName}-{environment}
 - Container Environment: `env-tsazurehealth-dev`
 
 **Example for prod environment:**
+
 - Resource Group: `rg-azure-health`
 - Container App: `app-tsazurehealth-prod`
 - Key Vault: `kv-tsazurehealth-prod-xyz789` (with unique suffix)
@@ -63,17 +66,20 @@ Resources are named using the pattern: `{resource-type}-{baseName}-{environment}
 
 - **`location`** - Azure region for resources
   - Default: Resource group location
-  
 - **`baseName`** - Base name for resources (will be suffixed with environment)
+
   - Default: `tsazurehealth`
 
 - **`acrName`** - Name of existing Azure Container Registry
+
   - Default: `azureconnectedservicesacr`
 
 - **`acrResourceGroup`** - Resource group of the ACR
+
   - Default: `AzureConnectedServices-RG`
 
 - **`imageTag`** - Container image tag to deploy
+
   - Default: `latest`
 
 - **`externalIngress`** - Enable public FQDN ingress
@@ -146,10 +152,12 @@ az deployment group show \
 ## Resources Created
 
 ### Container Apps Environment
+
 - Provides hosting environment for Container Apps
 - Configured with Log Analytics workspace
 
 ### Container App
+
 - Hosts the frontend application
 - Pulls images from ACR using managed identity
 - Configured with Key Vault URL as environment variable
@@ -157,32 +165,38 @@ az deployment group show \
 - Auto-scaling configuration (min: 1, max: 1)
 
 ### Key Vault
+
 - Stores application secrets
 - RBAC authorization enabled
 - Managed identity has "Key Vault Secrets User" role
 
 ### User-Assigned Managed Identity
+
 - Used by Container App for authentication
 - Has "AcrPull" role on ACR (for image pulling)
 - Has "Key Vault Secrets User" role on Key Vault
 
 ### RBAC Role Assignments
+
 - ACR Pull access for the managed identity
 - Key Vault Secrets User access for the managed identity
 
 ## Security
 
 ### Authentication
+
 - Container App uses User-Assigned Managed Identity
 - No credentials stored in code or configuration
 - RBAC-based access control throughout
 
 ### Secrets Management
+
 - Application secrets stored in Azure Key Vault
 - Container App accesses Key Vault using managed identity
 - Key Vault URL provided as environment variable
 
 ### Network Security
+
 - External ingress can be disabled per environment
 - HTTPS enforced for all traffic
 - ACR authentication using managed identity
@@ -190,6 +204,7 @@ az deployment group show \
 ## Tags
 
 All resources are tagged with:
+
 - **`environment`** - Environment name (dev, staging, prod)
 - **`project`** - Project name (`ts-azure-health`)
 - **`managedBy`** - Deployment method (`bicep`)
@@ -200,6 +215,7 @@ All resources are tagged with:
 ### Adding a New Environment
 
 1. Create a new parameter file (e.g., `staging.bicepparam`):
+
    ```bicep
    using './main.bicep'
 
@@ -230,6 +246,7 @@ All resources are tagged with:
 ### Deployment Failures
 
 View deployment errors:
+
 ```bash
 az deployment group show \
   --resource-group rg-azure-health-dev \
@@ -240,6 +257,7 @@ az deployment group show \
 ### Resource Conflicts
 
 If resources already exist:
+
 - Bicep deployments are idempotent - running again updates existing resources
 - Resource names include unique suffix to avoid conflicts
 - Each environment has isolated resources
@@ -247,10 +265,12 @@ If resources already exist:
 ### Permission Issues
 
 Ensure you have:
+
 - Contributor role on the subscription or resource group
 - User Access Administrator role (for RBAC assignments)
 
 Check your roles:
+
 ```bash
 az role assignment list --assignee $(az account show --query user.name -o tsv)
 ```

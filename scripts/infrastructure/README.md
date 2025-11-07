@@ -9,6 +9,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 **Deploys Azure infrastructure using Bicep template.**
 
 **Usage:**
+
 ```bash
 # Deploy with defaults (dev environment)
 ./deploy-bicep.sh
@@ -21,12 +22,14 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-l, --location LOCATION` - Azure region for deployment (default: eastus)
 - `-w, --whatif` - Preview changes without deploying
 - `-h, --help` - Display help message
 
 **What it creates:**
+
 - Resource Group with environment tagging
 - Azure Container Registry role assignment (AcrPull)
 - User-assigned Managed Identity
@@ -36,6 +39,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 - RBAC role assignments for ACR and Key Vault access
 
 **Features:**
+
 - Idempotent - safe to run multiple times
 - Environment-specific parameter files (dev.bicepparam, prod.bicepparam)
 - Comprehensive error handling and validation
@@ -43,6 +47,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 - Configures all required resources
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Appropriate permissions to create resources and assign roles
 - jq installed for JSON parsing
@@ -52,6 +57,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 **Destroys Azure infrastructure by deleting the resource group.**
 
 **Usage:**
+
 ```bash
 # Destroy dev environment
 ./destroy-bicep.sh
@@ -61,16 +67,19 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-h, --help` - Display help message
 
 **Features:**
+
 - Lists all resources before deletion
 - Requires explicit confirmation
 - Colored output showing what will be deleted
 - Asynchronous deletion (runs in background)
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Appropriate permissions to delete resources
 
@@ -81,6 +90,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 **Previews infrastructure changes using Bicep what-if.**
 
 **Usage:**
+
 ```bash
 # Preview changes for dev environment
 ./whatif-bicep.sh
@@ -90,17 +100,20 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-l, --location LOCATION` - Azure region for deployment (default: eastus)
 - `-h, --help` - Display help message
 
 **Features:**
+
 - Shows what would change without deploying
 - Creates temporary resource group if needed
 - Displays full resource payloads
 - No changes are made to Azure resources
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Reader access to the subscription
 
@@ -114,12 +127,14 @@ The scripts use environment-specific parameter files located in `infrastructure/
 Each environment creates isolated resources with unique naming:
 
 **Development (dev):**
+
 - Resource Group: `rg-azure-health-dev`
 - Container App: `app-tsazurehealth-dev`
 - Key Vault: `kv-tsazurehealth-dev-<unique>`
 - Managed Identity: `id-tsazurehealth-dev`
 
 **Production (prod):**
+
 - Resource Group: `rg-azure-health`
 - Container App: `app-tsazurehealth-prod`
 - Key Vault: `kv-tsazurehealth-prod-<unique>`
@@ -174,6 +189,7 @@ These workflows use the same Bicep templates and parameter files as the local sc
 ### Authentication Issues
 
 If you get authentication errors:
+
 ```bash
 az login
 az account show
@@ -182,18 +198,21 @@ az account show
 ### Permission Errors
 
 Ensure you have the required roles:
+
 ```bash
 # Check your role assignments
 az role assignment list --assignee $(az account show --query user.name -o tsv)
 ```
 
 Required permissions:
+
 - Contributor role on the resource group
 - User Access Administrator (for RBAC assignments)
 
 ### Parameter File Issues
 
 Ensure parameter files exist:
+
 ```bash
 ls -la infrastructure/*.bicepparam
 ```
