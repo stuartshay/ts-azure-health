@@ -148,17 +148,12 @@ jobs:
 
           RESOURCE_GROUP="rg-azure-health-dev"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=dev \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Skipping what-if for dev environment."
+            exit 0
           fi
 
           echo "Running what-if for Dev environment..."
@@ -190,17 +185,12 @@ jobs:
 
           RESOURCE_GROUP="rg-azure-health-staging"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=staging \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Skipping what-if for staging environment."
+            exit 0
           fi
 
           echo "Running what-if for Staging environment..."
@@ -232,17 +222,12 @@ jobs:
 
           RESOURCE_GROUP="rg-azure-health"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=prod \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location eastus"
+            echo "Skipping what-if for prod environment."
+            exit 0
           fi
 
           echo "Running what-if for Prod environment..."
