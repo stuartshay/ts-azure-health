@@ -1,2 +1,2 @@
 #!/usr/bin/env sh
-cd frontend && npx --no -- commitlint --edit "$1" --config ../commitlint.config.js
+(cd frontend && npx --no -- commitlint --edit "$(git rev-parse --git-dir)/COMMIT_EDITMSG")
