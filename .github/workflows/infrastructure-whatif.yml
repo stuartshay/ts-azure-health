@@ -49,14 +49,28 @@ jobs:
 
       - name: Azure login
         if: steps.check_credentials.outputs.has_credentials == 'true'
+        id: azure_login
+        continue-on-error: true
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup retry utilities
+      - name: Check login status
         if: steps.check_credentials.outputs.has_credentials == 'true'
+        id: login_status
+        run: |
+          if [ "${{ steps.azure_login.outcome }}" = "success" ]; then
+            echo "login_successful=true" >> $GITHUB_OUTPUT
+            echo "✅ Azure login successful"
+          else
+            echo "login_successful=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Azure login failed - credentials may be invalid or expired"
+          fi
+
+      - name: Setup retry utilities
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true'
         shell: bash
         run: |
           # Create retry function for Azure operations
@@ -139,7 +153,7 @@ jobs:
           echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
 
       - name: Run What-If for Dev environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
         id: whatif_dev
         continue-on-error: true
         shell: bash
@@ -176,7 +190,7 @@ jobs:
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Staging environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
         id: whatif_staging
         continue-on-error: true
         shell: bash
@@ -213,7 +227,7 @@ jobs:
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Prod environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
         id: whatif_prod
         continue-on-error: true
         shell: bash
@@ -255,8 +269,9 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Check if credentials were available
+            // Check if credentials were available and login was successful
             const hasCredentials = '${{ steps.check_credentials.outputs.has_credentials }}' === 'true';
+            const loginSuccessful = '${{ steps.login_status.outputs.login_successful }}' === 'true';
 
             let summary = '';
 
@@ -272,6 +287,18 @@ jobs:
               - \`AZURE_CLIENT_ID\`
               - \`AZURE_TENANT_ID\`
               - \`AZURE_SUBSCRIPTION_ID\``;
+            } else if (!loginSuccessful) {
+              summary = `⚠️  **Azure login failed**
+
+              Azure credentials are configured but login failed. This could indicate:
+              - Expired or invalid credentials
+              - Incorrect secret values
+              - Permission issues with the service principal
+
+              Please verify your Azure credentials and update the repository secrets if needed.
+
+              To update credentials, follow the setup instructions in:
+              - [docs/GITHUB_ACTIONS_SETUP.md](https://github.com/${{ github.repository }}/blob/develop/docs/GITHUB_ACTIONS_SETUP.md)`;
             } else {
               // Read the what-if summary
               try {
@@ -283,12 +310,12 @@ jobs:
 
             const body = `## 🔍 Infrastructure What-If Preview
 
-            This PR modifies infrastructure files. ${hasCredentials ? "Here's a preview of what would change when deployed:" : ''}
+            This PR modifies infrastructure files. ${hasCredentials && loginSuccessful ? "Here's a preview of what would change when deployed:" : ''}
 
             ${summary}
 
             ---
-            <sub>💡 ${hasCredentials ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure Azure credentials to enable infrastructure change previews.'}</sub>
+            <sub>💡 ${hasCredentials && loginSuccessful ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure valid Azure credentials to enable infrastructure change previews.'}</sub>
             `;
 
             // Find existing comment
