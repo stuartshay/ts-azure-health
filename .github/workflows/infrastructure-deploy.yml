@@ -38,7 +38,11 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "RESOURCE_GROUP=rg-ts-azure-health-${{ github.event.inputs.environment }}" >> "$GITHUB_ENV"
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "RESOURCE_GROUP=rg-azure-health" >> "$GITHUB_ENV"
+          else
+            echo "RESOURCE_GROUP=rg-azure-health-${{ github.event.inputs.environment }}" >> "$GITHUB_ENV"
+          fi
           echo "LOCATION=eastus" >> "$GITHUB_ENV"
 
       - name: Setup retry utilities

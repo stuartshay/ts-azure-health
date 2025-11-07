@@ -63,7 +63,7 @@ bicep build-params infrastructure/dev.bicepparam --stdout
 
 # What-if deployment (requires Azure login)
 az deployment group what-if \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file infrastructure/main.bicep \
   --parameters infrastructure/dev.bicepparam
 ```

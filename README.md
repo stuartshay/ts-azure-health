@@ -129,13 +129,13 @@ This project supports multi-environment deployments using infrastructure as code
 Each environment has isolated resources:
 
 - **Development (dev)**
-  - Resource Group: `rg-ts-azure-health-dev`
+  - Resource Group: `rg-azure-health-dev`
   - Container App: `app-tsazurehealth-dev`
   - Key Vault: `kv-tsazurehealth-dev-<unique>`
   - Managed Identity: `id-tsazurehealth-dev`
 
 - **Production (prod)**
-  - Resource Group: `rg-ts-azure-health-prod`
+  - Resource Group: `rg-azure-health`
   - Container App: `app-tsazurehealth-prod`
   - Key Vault: `kv-tsazurehealth-prod-<unique>`
   - Managed Identity: `id-tsazurehealth-prod`
@@ -370,14 +370,14 @@ For local development and testing, use the Bash scripts in `scripts/infrastructu
    # Update Container App
    az containerapp update \
      --name app-tsazurehealth-dev \
-     --resource-group rg-ts-azure-health-dev \
+     --resource-group rg-azure-health-dev \
      --image azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
    ```
 
 4. **View deployment details:**
    ```bash
-   az resource list --resource-group rg-ts-azure-health-dev --output table
-   az containerapp show --name app-tsazurehealth-dev --resource-group rg-ts-azure-health-dev
+az resource list --resource-group rg-azure-health-dev --output table
+az containerapp show --name app-tsazurehealth-dev --resource-group rg-azure-health-dev
    ```
 
 See [scripts/infrastructure/README.md](scripts/infrastructure/README.md) for detailed documentation on local scripts.
@@ -409,19 +409,19 @@ Deploy `infrastructure/main.bicep` using environment-specific parameter files:
 
 ```bash
 # Create resource group for dev environment
-az group create --name rg-ts-azure-health-dev --location eastus
+az group create --name rg-azure-health-dev --location eastus
 
 # Deploy infrastructure to dev
 az deployment group create \
-  --resource-group rg-ts-azure-health-dev \
-  --template-file infrastructure/main.bicep \
+  --resource-group rg-azure-health-dev \
+  --template-file infrastructure/main.bicep
   --parameters infrastructure/dev.bicepparam
 
 # Or for production
-az group create --name rg-ts-azure-health-prod --location eastus
+az group create --name rg-azure-health --location eastus
 
 az deployment group create \
-  --resource-group rg-ts-azure-health-prod \
+  --resource-group rg-azure-health \
   --template-file infrastructure/main.bicep \
   --parameters infrastructure/prod.bicepparam
 ```
@@ -443,7 +443,7 @@ After deployment, add environment variables to your Container App through the Az
 # For dev environment
 az containerapp update \
   --name app-tsazurehealth-dev \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
@@ -455,7 +455,7 @@ az containerapp update \
 # For prod environment
 az containerapp update \
   --name app-tsazurehealth-prod \
-  --resource-group rg-ts-azure-health-prod \
+  --resource-group rg-azure-health \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \

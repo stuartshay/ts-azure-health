@@ -76,7 +76,11 @@ if [[ ! "$ENVIRONMENT" =~ ^(dev|staging|prod)$ ]]; then
 fi
 
 # Set resource group name based on environment
-RESOURCE_GROUP="rg-ts-azure-health-${ENVIRONMENT}"
+if [ "${ENVIRONMENT}" = "prod" ]; then
+  RESOURCE_GROUP="rg-azure-health"
+else
+  RESOURCE_GROUP="rg-azure-health-${ENVIRONMENT}"
+fi
 
 # Navigate to infrastructure directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

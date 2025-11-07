@@ -114,13 +114,13 @@ The scripts use environment-specific parameter files located in `infrastructure/
 Each environment creates isolated resources with unique naming:
 
 **Development (dev):**
-- Resource Group: `rg-ts-azure-health-dev`
+- Resource Group: `rg-azure-health-dev`
 - Container App: `app-tsazurehealth-dev`
 - Key Vault: `kv-tsazurehealth-dev-<unique>`
 - Managed Identity: `id-tsazurehealth-dev`
 
 **Production (prod):**
-- Resource Group: `rg-ts-azure-health-prod`
+- Resource Group: `rg-azure-health`
 - Container App: `app-tsazurehealth-prod`
 - Key Vault: `kv-tsazurehealth-prod-<unique>`
 - Managed Identity: `id-tsazurehealth-prod`
@@ -137,7 +137,7 @@ Each environment creates isolated resources with unique naming:
 ./deploy-bicep.sh -e dev
 
 # 3. Verify deployment in Azure Portal or CLI
-az resource list --resource-group rg-ts-azure-health-dev --output table
+az resource list --resource-group rg-azure-health-dev --output table
 ```
 
 ### Update Existing Infrastructure

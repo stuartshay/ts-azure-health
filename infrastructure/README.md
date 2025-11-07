@@ -38,14 +38,14 @@ These files use the Bicep parameter file format (`.bicepparam`) and reference th
 Resources are named using the pattern: `{resource-type}-{baseName}-{environment}-{uniqueSuffix}`
 
 **Example for dev environment:**
-- Resource Group: `rg-ts-azure-health-dev`
+- Resource Group: `rg-azure-health-dev`
 - Container App: `app-tsazurehealth-dev`
 - Key Vault: `kv-tsazurehealth-dev-abc123` (with unique suffix)
 - Managed Identity: `id-tsazurehealth-dev`
 - Container Environment: `env-tsazurehealth-dev`
 
 **Example for prod environment:**
-- Resource Group: `rg-ts-azure-health-prod`
+- Resource Group: `rg-azure-health`
 - Container App: `app-tsazurehealth-prod`
 - Key Vault: `kv-tsazurehealth-prod-xyz789` (with unique suffix)
 - Managed Identity: `id-tsazurehealth-prod`
@@ -86,13 +86,13 @@ Resources are named using the pattern: `{resource-type}-{baseName}-{environment}
 ```bash
 # Deploy to dev
 az deployment group create \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file main.bicep \
   --parameters dev.bicepparam
 
 # Deploy to prod
 az deployment group create \
-  --resource-group rg-ts-azure-health-prod \
+  --resource-group rg-azure-health \
   --template-file main.bicep \
   --parameters prod.bicepparam
 ```
@@ -104,7 +104,7 @@ You can override parameters from the parameter file:
 ```bash
 # Deploy dev with custom image tag
 az deployment group create \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file main.bicep \
   --parameters dev.bicepparam \
   --parameters imageTag=v1.2.3
@@ -116,7 +116,7 @@ Preview changes before deployment:
 
 ```bash
 az deployment group what-if \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file main.bicep \
   --parameters dev.bicepparam
 ```
@@ -138,7 +138,7 @@ View outputs after deployment:
 
 ```bash
 az deployment group show \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --name <deployment-name> \
   --query properties.outputs
 ```
@@ -219,7 +219,7 @@ All resources are tagged with:
 2. Run what-if to preview changes:
    ```bash
    az deployment group what-if \
-     --resource-group rg-ts-azure-health-dev \
+     --resource-group rg-azure-health-dev \
      --template-file main.bicep \
      --parameters dev.bicepparam
    ```
@@ -232,7 +232,7 @@ All resources are tagged with:
 View deployment errors:
 ```bash
 az deployment group show \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --name <deployment-name> \
   --query properties.error
 ```

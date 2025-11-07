@@ -146,7 +146,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-dev"
+          RESOURCE_GROUP="rg-azure-health-dev"
 
           # Create resource group if it doesn't exist (for what-if to work)
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
@@ -188,7 +188,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-staging"
+          RESOURCE_GROUP="rg-azure-health-staging"
 
           # Create resource group if it doesn't exist (for what-if to work)
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
@@ -230,7 +230,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-prod"
+          RESOURCE_GROUP="rg-azure-health"
 
           # Create resource group if it doesn't exist (for what-if to work)
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
