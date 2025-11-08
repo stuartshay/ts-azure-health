@@ -210,6 +210,15 @@ You can deploy infrastructure using either:
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
      --audiences api://AzureADTokenExchange
+
+   # For pull requests
+   az identity federated-credential create \
+     --name github-actions-pull-request \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health-shared \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:pull_request \
+     --audiences api://AzureADTokenExchange
    ```
 
 3. **Grant Permissions**: Assign necessary roles to the managed identity:

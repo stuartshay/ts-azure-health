@@ -95,6 +95,18 @@ az identity federated-credential create \
   --audiences api://AzureADTokenExchange
 ```
 
+#### For Pull Requests
+
+```bash
+az identity federated-credential create \
+  --name github-actions-pull-request \
+  --identity-name id-github-actions-ts-azure-health \
+  --resource-group rg-azure-health-shared \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:stuartshay/ts-azure-health:pull_request \
+  --audiences api://AzureADTokenExchange
+```
+
 **Note**: Replace `stuartshay/ts-azure-health` with your actual GitHub repository path (format: `owner/repo`).
 
 ### 4. Grant Azure Permissions
