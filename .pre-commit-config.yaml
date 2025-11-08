@@ -30,21 +30,14 @@ repos:
         name: Fix mixed line endings
         args: ['--fix=lf']
 
-  # TypeScript/JavaScript linting
+  # TypeScript type checking (ESLint is handled by frontend husky hooks)
   - repo: local
     hooks:
-      - id: eslint
-        name: ESLint
-        entry: bash -c 'cd frontend && npx eslint --max-warnings=0 "$@"'
-        language: system
-        files: \.(js|jsx|ts|tsx)$
-        exclude: node_modules/
-        pass_filenames: true
       - id: typescript-check
         name: TypeScript Type Check
         entry: bash -c 'cd frontend && npx tsc --noEmit'
         language: system
-        files: \.(ts|tsx)$
+        files: ^frontend/.*\.(ts|tsx)$
         exclude: node_modules/
         pass_filenames: false
 
