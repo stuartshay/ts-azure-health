@@ -203,7 +203,7 @@ jobs:
           # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
-            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location \$LOCATION"
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
             echo "Skipping what-if for staging environment."
             exit 0
           fi
