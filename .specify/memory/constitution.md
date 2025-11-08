@@ -123,7 +123,8 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - MUST run on every commit without exception
 - MUST include: code linting (ESLint), formatting (Prettier), type checking (TypeScript), file quality checks
 - MUST fail the commit if any check fails
-- MUST be configured via `.pre-commit-config.yaml` at repository root
+- MUST be configured via Husky in `frontend/.husky/` (git hooks managed by Husky scripts)
+  - If additional file validation is performed via `.pre-commit-config.yaml`, this must be documented and maintained, but Husky is the required framework for git hooks.
 
 **Examples**:
 
