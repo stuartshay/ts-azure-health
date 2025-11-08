@@ -51,6 +51,17 @@ repos:
         # DL3009: Delete apt cache - handled by base images
         args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
 
+  # Bicep linting and validation
+  - repo: local
+    hooks:
+      - id: bicep-lint
+        name: Bicep Lint & Build
+        description: Validate Bicep syntax, types, and API versions using Azure CLI
+        entry: bash -c 'for file in "$@"; do echo "Checking $file..."; az bicep build --file "$file" --stdout > /dev/null || exit 1; done' --
+        language: system
+        files: \.bicep$
+        pass_filenames: true
+
   # Markdown formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
