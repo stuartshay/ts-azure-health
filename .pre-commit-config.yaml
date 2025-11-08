@@ -41,6 +41,15 @@ repos:
         exclude: node_modules/
         pass_filenames: false
 
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: ShellCheck
+        args: ['--severity=warning']
+        exclude: '^(\.devcontainer/.*|\.specify/.*)'
+
   # Dockerfile linting
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
