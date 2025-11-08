@@ -8,9 +8,9 @@ on:
         required: true
         type: choice
         options:
-          - develop
-          - production
-        default: 'develop'
+          - dev
+          - prod
+        default: 'dev'
 
 permissions:
   id-token: write
@@ -144,7 +144,7 @@ jobs:
       - name: Set environment-specific variables
         id: env-vars
         run: |
-          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+          if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
             echo "resource-group=rg-azure-health" >> $GITHUB_OUTPUT
             echo "container-app=app-tsazurehealth-prod" >> $GITHUB_OUTPUT
             echo "kv-name=kv-tsazurehealth-prod" >> $GITHUB_OUTPUT
