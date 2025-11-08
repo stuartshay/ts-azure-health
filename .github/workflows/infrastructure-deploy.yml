@@ -174,17 +174,15 @@ jobs:
           echo "✅ Deployment completed successfully!"
 
           # Extract outputs from deployment
-          container_app_name=$(echo "$deployment_output" | jq -r '.properties.outputs.containerAppName.value')
-          container_app_url=$(echo "$deployment_output" | jq -r '.properties.outputs.containerAppUrl.value')
           key_vault_name=$(echo "$deployment_output" | jq -r '.properties.outputs.keyVaultName.value')
           managed_identity_name=$(echo "$deployment_output" | jq -r '.properties.outputs.managedIdentityName.value')
+          managed_env_name=$(echo "$deployment_output" | jq -r '.properties.outputs.managedEnvironmentName.value')
 
           # Set outputs for next steps
           {
-            echo "container_app_name=$container_app_name"
-            echo "container_app_url=$container_app_url"
             echo "key_vault_name=$key_vault_name"
             echo "managed_identity_name=$managed_identity_name"
+            echo "managed_environment_name=$managed_env_name"
           } >> "$GITHUB_OUTPUT"
 
           # Display deployment summary
@@ -196,11 +194,12 @@ jobs:
             echo "**Location:** $LOCATION"
             echo ""
             echo "#### Deployed Resources"
-            echo "- **Container App:** $container_app_name"
+            echo "- **Container Apps Environment:** $managed_env_name"
             echo "- **Key Vault:** $key_vault_name"
             echo "- **Managed Identity:** $managed_identity_name"
             echo ""
-            echo "**Container App URL:** $container_app_url"
+            echo "#### Notes"
+            echo "- Container apps can be deployed separately using the deploy-frontend workflow"
             echo ""
             echo "#### Retry Configuration"
             echo "- Max retry attempts: $MAX_RETRY_ATTEMPTS"

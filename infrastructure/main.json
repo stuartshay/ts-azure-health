@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.38.33.27573",
-      "templateHash": "1665970971270121561"
+      "templateHash": "844474171147861139"
     }
   },
   "parameters": {
@@ -49,20 +49,6 @@
         "description": "Azure Container Registry Resource Group name"
       }
     },
-    "imageTag": {
-      "type": "string",
-      "defaultValue": "latest",
-      "metadata": {
-        "description": "Container image tag version"
-      }
-    },
-    "externalIngress": {
-      "type": "bool",
-      "defaultValue": true,
-      "metadata": {
-        "description": "Public FQDN ingress (true = external)"
-      }
-    },
     "currentDate": {
       "type": "string",
       "defaultValue": "[utcNow('yyyy-MM-dd')]",
@@ -74,7 +60,6 @@
   "variables": {
     "uniqueSuffix": "[uniqueString(resourceGroup().id)]",
     "keyVaultName": "[take(format('kv-{0}-{1}-{2}', parameters('baseName'), parameters('environment'), variables('uniqueSuffix')), 24)]",
-    "containerAppName": "[format('app-{0}-{1}', parameters('baseName'), parameters('environment'))]",
     "managedEnvName": "[format('env-{0}-{1}', parameters('baseName'), parameters('environment'))]",
     "uamiName": "[format('id-{0}-{1}', parameters('baseName'), parameters('environment'))]",
     "commonTags": {
@@ -142,64 +127,6 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]"
-      ]
-    },
-    {
-      "type": "Microsoft.App/containerApps",
-      "apiVersion": "2025-07-01",
-      "name": "[variables('containerAppName')]",
-      "location": "[parameters('location')]",
-      "tags": "[variables('commonTags')]",
-      "identity": {
-        "type": "UserAssigned",
-        "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')))]": {}
-        }
-      },
-      "properties": {
-        "managedEnvironmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvName'))]",
-        "configuration": {
-          "activeRevisionsMode": "Single",
-          "ingress": {
-            "external": "[parameters('externalIngress')]",
-            "targetPort": 3000
-          },
-          "registries": [
-            {
-              "server": "[reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('acrResourceGroup')), 'Microsoft.Resources/deployments', 'acrRoleAssignment'), '2025-04-01').outputs.acrLoginServer.value]",
-              "identity": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName'))]"
-            }
-          ],
-          "secrets": [],
-          "dapr": {
-            "enabled": false
-          }
-        },
-        "template": {
-          "containers": [
-            {
-              "image": "[format('{0}/ts-azure-health-frontend:{1}', reference(extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('acrResourceGroup')), 'Microsoft.Resources/deployments', 'acrRoleAssignment'), '2025-04-01').outputs.acrLoginServer.value, parameters('imageTag'))]",
-              "name": "frontend",
-              "env": [
-                {
-                  "name": "KV_URL",
-                  "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName')), '2025-05-01').vaultUri]"
-                }
-              ],
-              "probes": []
-            }
-          ],
-          "scale": {
-            "minReplicas": 1,
-            "maxReplicas": 1
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvName'))]",
-        "[extensionResourceId(format('/subscriptions/{0}/resourceGroups/{1}', subscription().subscriptionId, parameters('acrResourceGroup')), 'Microsoft.Resources/deployments', 'acrRoleAssignment')]",
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName'))]"
       ]
     },
     {
@@ -286,14 +213,6 @@
     }
   ],
   "outputs": {
-    "containerAppName": {
-      "type": "string",
-      "value": "[variables('containerAppName')]"
-    },
-    "containerAppUrl": {
-      "type": "string",
-      "value": "[format('https://{0}', reference(resourceId('Microsoft.App/containerApps', variables('containerAppName')), '2025-07-01').configuration.ingress.fqdn)]"
-    },
     "keyVaultName": {
       "type": "string",
       "value": "[variables('keyVaultName')]"
@@ -309,6 +228,14 @@
     "managedIdentityPrincipalId": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('uamiName')), '2024-11-30').principalId]"
+    },
+    "managedEnvironmentId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.App/managedEnvironments', variables('managedEnvName'))]"
+    },
+    "managedEnvironmentName": {
+      "type": "string",
+      "value": "[variables('managedEnvName')]"
     },
     "resourceGroupName": {
       "type": "string",
