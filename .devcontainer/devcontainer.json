@@ -35,6 +35,9 @@
     },
     "ghcr.io/devcontainers-community/npm-features/prettier:1": {
       "version": "latest"
+    },
+    "ghcr.io/devcontainers-contrib/features/pre-commit:2": {
+      "version": "latest"
     }
   },
 
