@@ -169,10 +169,6 @@ jobs:
           template: ./infrastructure/main.bicep
           parameters: >
             imageTag=${{ needs.build-and-push.outputs.image-tag }}
-            keyVaultName=${{ steps.env-vars.outputs.kv-name }}
-            containerAppName=${{ steps.env-vars.outputs.container-app }}
-            managedEnvName=${{ steps.env-vars.outputs.managed-env }}
-            uamiName=${{ steps.env-vars.outputs.uami-name }}
             acrName=${{ env.ACR_NAME }}
             acrResourceGroup=${{ env.ACR_RESOURCE_GROUP }}
           failOnStdErr: false
