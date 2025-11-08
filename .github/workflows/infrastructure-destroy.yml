@@ -158,11 +158,11 @@ jobs:
             --resource-group "$RESOURCE_GROUP" \
             --query "[?tags.project=='ts-azure-health'].name" -o tsv || echo "")
 
-          # Store resource names
-          echo "managed-env=$MANAGED_ENV" >> "$GITHUB_OUTPUT"
-          echo "log-analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
+          # Store resource names (use underscores to avoid GitHub Actions bracket notation requirement)
+          echo "managed_env=$MANAGED_ENV" >> "$GITHUB_OUTPUT"
+          echo "log_analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
           echo "uami=$UAMI" >> "$GITHUB_OUTPUT"
-          echo "key-vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
+          echo "key_vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
 
           # List resources that will be deleted
           {
@@ -229,7 +229,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          MANAGED_ENV="${{ steps.identify_resources.outputs.managed-env }}"
+          MANAGED_ENV="${{ steps.identify_resources.outputs.managed_env }}"
 
           echo "🗑️ Step 2/5: Deleting Container Apps managed environment: $MANAGED_ENV"
 
@@ -277,7 +277,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          KEY_VAULT="${{ steps.identify_resources.outputs.key-vault }}"
+          KEY_VAULT="${{ steps.identify_resources.outputs.key_vault }}"
 
           if [ -z "$KEY_VAULT" ] || [ "$KEY_VAULT" = "null" ]; then
             echo "ℹ️  Step 4/5: Key Vault not found"
@@ -299,7 +299,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          LOG_ANALYTICS="${{ steps.identify_resources.outputs.log-analytics }}"
+          LOG_ANALYTICS="${{ steps.identify_resources.outputs.log_analytics }}"
 
           echo "🗑️ Step 5/5: Deleting Log Analytics workspace: $LOG_ANALYTICS"
 
