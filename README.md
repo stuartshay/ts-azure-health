@@ -247,6 +247,12 @@ You can deploy infrastructure using either:
      --role Contributor \
      --scope /subscriptions/$SUBSCRIPTION_ID
 
+   # User Access Administrator role (required for Bicep to create role assignments)
+   az role assignment create \
+     --assignee $CLIENT_ID \
+     --role "User Access Administrator" \
+     --scope /subscriptions/$SUBSCRIPTION_ID
+
    # AcrPush role for pushing images to existing ACR
    az role assignment create \
      --assignee $CLIENT_ID \
