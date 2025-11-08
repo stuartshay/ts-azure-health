@@ -137,56 +137,354 @@ jobs:
             echo "Resource group does not exist: $RESOURCE_GROUP"
           fi
 
-      - name: List resources to be deleted
+      - name: Identify resources created by this project
+        id: identify_resources
         if: steps.check_rg.outputs.exists == 'true'
         run: |
+          echo "🔍 Identifying resources created by ts-azure-health project..."
+
+          # Define naming convention variables to match Bicep template (infrastructure/main.bicep)
+          # Bicep: param baseName string = 'tsazurehealth'
+          # Bicep naming patterns:
+          #   - managedEnvName: 'env-${baseName}-${environment}'
+          #   - logAnalyticsWorkspaceName: 'log-${baseName}-${environment}'
+          #   - uamiName: 'id-${baseName}-${environment}'
+          #   - keyVaultName: take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
+          BASE_NAME="tsazurehealth"
+          ENV="${{ github.event.inputs.environment }}"
+
+          # Construct resource names using Bicep naming convention
+          MANAGED_ENV="env-${BASE_NAME}-${ENV}"
+          LOG_ANALYTICS="log-${BASE_NAME}-${ENV}"
+          UAMI="id-${BASE_NAME}-${ENV}"
+
+          # Key Vault has unique suffix, so we search by prefix pattern
+          KEY_VAULT=$(az keyvault list \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "[?starts_with(name, 'kv-${BASE_NAME}-${ENV}')].name | [0]" -o tsv || echo "")
+
+          # Find container apps with project tag
+          CONTAINER_APPS=$(az containerapp list \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "[?tags.project=='ts-azure-health'].name" -o tsv || echo "")
+
+          # Store resource names (use underscores to avoid GitHub Actions bracket notation requirement)
+          echo "managed_env=$MANAGED_ENV" >> "$GITHUB_OUTPUT"
+          echo "log_analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
+          echo "uami=$UAMI" >> "$GITHUB_OUTPUT"
+          echo "key_vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
+          echo "container_apps=$CONTAINER_APPS" >> "$GITHUB_OUTPUT"
+
+          # List resources that will be deleted
           {
             echo "### Resources to be Deleted"
             echo ""
             echo "**Environment:** ${{ github.event.inputs.environment }}"
-            echo "**Resource Group:** $RESOURCE_GROUP"
+            echo "**Resource Group:** $RESOURCE_GROUP (will be preserved)"
             echo ""
+            echo "**Scope:** Only deleting resources created by ts-azure-health project"
+            echo ""
+            echo "#### Bicep-managed Resources"
+            echo "- Container App Environment: \`$MANAGED_ENV\`"
+            echo "- Log Analytics Workspace: \`$LOG_ANALYTICS\`"
+            echo "- Managed Identity: \`$UAMI\`"
+            if [ -n "$KEY_VAULT" ] && [ "$KEY_VAULT" != "null" ]; then
+              echo "- Key Vault: \`$KEY_VAULT\`"
+            fi
+            if [ -n "$CONTAINER_APPS" ]; then
+              echo ""
+              echo "#### Container Apps (tagged with project=ts-azure-health)"
+              for app in $CONTAINER_APPS; do
+                echo "- \`$app\`"
+              done
+            fi
+            echo ""
+            echo "**Note:** Resource group and resources from other projects will be preserved"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          echo "Listing all resources in resource group: $RESOURCE_GROUP"
-          az resource list \
-            --resource-group "$RESOURCE_GROUP" \
-            --output table
-
-          # Add resources to summary
-          {
-            echo "#### Resources"
-            echo '```'
-            az resource list \
-              --resource-group "$RESOURCE_GROUP" \
-              --output table
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Delete resource group
+      - name: Delete container apps
+        id: delete_apps
         if: steps.check_rg.outputs.exists == 'true'
         shell: bash
         run: |
           source /tmp/retry-utils.sh
 
-          echo "⚠️ Deleting resource group: $RESOURCE_GROUP"
-          echo "This will delete all resources in the resource group..."
+          echo "🗑️ Step 1/5: Deleting container apps..."
 
-          retry_azure_operation \
-            "$MAX_RETRY_ATTEMPTS" \
-            "Delete resource group $RESOURCE_GROUP" \
-            az group delete \
-              --name "$RESOURCE_GROUP" \
-              --yes \
-              --no-wait
+          # Find container apps with project tag (store in array for proper handling)
+          mapfile -t CONTAINER_APPS < <(az containerapp list \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "[?tags.project=='ts-azure-health'].name" -o tsv || echo "")
 
-          echo "✅ Resource group deletion initiated: $RESOURCE_GROUP"
+          if [ ${#CONTAINER_APPS[@]} -eq 0 ] || [ -z "${CONTAINER_APPS[0]}" ]; then
+            echo "ℹ️  No container apps found with project=ts-azure-health tag"
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          else
+            # Initiate deletion for all container apps
+            for app in "${CONTAINER_APPS[@]}"; do
+              echo "  Deleting container app: $app"
+              retry_azure_operation \
+                "$MAX_RETRY_ATTEMPTS" \
+                "Delete container app $app" \
+                az containerapp delete \
+                  --name "$app" \
+                  --resource-group "$RESOURCE_GROUP" \
+                  --yes \
+                  --no-wait
+            done
+            echo "✅ Container app deletion initiated"
+
+            # Poll until all container apps are fully deleted
+            echo "⏳ Polling until all container apps are deleted..."
+            MAX_POLL_ATTEMPTS=60  # 10 minutes max (60 * 10 seconds)
+            POLL_INTERVAL=10
+            attempt=1
+
+              while [ $attempt -le $MAX_POLL_ATTEMPTS ]; do
+                # Check if any container apps with our project tag still exist
+                REMAINING_APPS=$(az containerapp list \
+                  --resource-group "$RESOURCE_GROUP" \
+                  --query "[?tags.project=='ts-azure-health'].name" -o tsv 2>/dev/null || echo "")
+
+                if [ -z "$REMAINING_APPS" ]; then
+                  echo "✅ All container apps deleted successfully"
+                  echo "deleted=true" >> "$GITHUB_OUTPUT"
+                  break
+                fi
+
+                echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: $(echo "$REMAINING_APPS" | wc -w) app(s) still deleting..."
+
+                if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
+              echo "❌ Timeout waiting for container apps to delete. Remaining apps:"
+              echo "$REMAINING_APPS"
+              exit 1
+            fi
+
+            sleep $POLL_INTERVAL
+            attempt=$((attempt + 1))
+          done
+          fi
+
+      - name: Delete managed environment
+        id: delete_env
+        if: steps.check_rg.outputs.exists == 'true'
+        shell: bash
+        run: |
+          source /tmp/retry-utils.sh
+
+          MANAGED_ENV="${{ steps.identify_resources.outputs.managed_env }}"
+
+          echo "🗑️ Step 2/5: Deleting Container Apps managed environment: $MANAGED_ENV"
+
+          if az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+            if retry_azure_operation \
+              "$MAX_RETRY_ATTEMPTS" \
+              "Delete managed environment $MANAGED_ENV" \
+              az containerapp env delete \
+                --name "$MANAGED_ENV" \
+                --resource-group "$RESOURCE_GROUP" \
+                --yes \
+                --no-wait; then
+              echo "✅ Managed environment deletion initiated"
+
+              # Poll until environment is fully deleted
+              echo "⏳ Polling until managed environment is deleted..."
+              MAX_POLL_ATTEMPTS=60  # 10 minutes max
+              POLL_INTERVAL=10
+              attempt=1
+
+              while [ $attempt -le $MAX_POLL_ATTEMPTS ]; do
+                if ! az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+                  echo "✅ Managed environment deleted successfully"
+                  echo "deleted=true" >> "$GITHUB_OUTPUT"
+                  break
+                fi
+
+                echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: Environment still deleting..."
+
+                if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
+                  echo "❌ Timeout waiting for managed environment to delete: $MANAGED_ENV"
+                  exit 1
+                fi
+
+                sleep $POLL_INTERVAL
+                attempt=$((attempt + 1))
+              done
+            else
+              echo "❌ Failed to delete managed environment: $MANAGED_ENV"
+              exit 1
+            fi
+          else
+            echo "ℹ️  Managed environment not found: $MANAGED_ENV"
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete managed identity
+        id: delete_identity
+        if: steps.check_rg.outputs.exists == 'true'
+        shell: bash
+        run: |
+          source /tmp/retry-utils.sh
+
+          UAMI="${{ steps.identify_resources.outputs.uami }}"
+
+          echo "🗑️ Step 3/5: Deleting managed identity: $UAMI"
+
+          if az identity show --name "$UAMI" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+            if retry_azure_operation \
+              "$MAX_RETRY_ATTEMPTS" \
+              "Delete managed identity $UAMI" \
+              az identity delete \
+                --name "$UAMI" \
+                --resource-group "$RESOURCE_GROUP"; then
+              echo "✅ Managed identity deleted"
+              echo "deleted=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "❌ Failed to delete managed identity: $UAMI"
+              exit 1
+            fi
+          else
+            echo "ℹ️  Managed identity not found: $UAMI"
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete Key Vault
+        id: delete_keyvault
+        if: steps.check_rg.outputs.exists == 'true'
+        shell: bash
+        run: |
+          source /tmp/retry-utils.sh
+
+          KEY_VAULT="${{ steps.identify_resources.outputs.key_vault }}"
+
+          if [ -z "$KEY_VAULT" ] || [ "$KEY_VAULT" = "null" ]; then
+            echo "ℹ️  Step 4/5: Key Vault not found"
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "🗑️ Step 4/5: Deleting Key Vault: $KEY_VAULT"
+
+            if retry_azure_operation \
+              "$MAX_RETRY_ATTEMPTS" \
+              "Delete Key Vault $KEY_VAULT" \
+              az keyvault delete \
+                --name "$KEY_VAULT" \
+                --resource-group "$RESOURCE_GROUP"; then
+              echo "✅ Key Vault deleted (soft-delete enabled, can be recovered for 90 days)"
+              echo "deleted=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "❌ Failed to delete Key Vault: $KEY_VAULT"
+              exit 1
+            fi
+          fi
+
+      - name: Delete Log Analytics workspace
+        id: delete_logs
+        if: steps.check_rg.outputs.exists == 'true'
+        shell: bash
+        run: |
+          source /tmp/retry-utils.sh
+
+          LOG_ANALYTICS="${{ steps.identify_resources.outputs.log_analytics }}"
+
+          echo "🗑️ Step 5/5: Deleting Log Analytics workspace: $LOG_ANALYTICS"
+
+          if az monitor log-analytics workspace show --workspace-name "$LOG_ANALYTICS" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+            if retry_azure_operation \
+              "$MAX_RETRY_ATTEMPTS" \
+              "Delete Log Analytics workspace $LOG_ANALYTICS" \
+              az monitor log-analytics workspace delete \
+                --workspace-name "$LOG_ANALYTICS" \
+                --resource-group "$RESOURCE_GROUP" \
+                --yes \
+                --force true; then
+              echo "✅ Log Analytics workspace deleted"
+              echo "deleted=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "❌ Failed to delete Log Analytics workspace: $LOG_ANALYTICS"
+              exit 1
+            fi
+          else
+            echo "ℹ️  Log Analytics workspace not found: $LOG_ANALYTICS"
+            echo "deleted=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deletion summary
+        if: steps.check_rg.outputs.exists == 'true'
+        run: |
+          echo ""
+          echo "📋 Verifying remaining resources in resource group..."
+          az resource list \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "[].{Name:name, Type:type, Tags:tags}" \
+            --output table || echo "No resources remaining or query failed"
+
+          # Track deletion results
+          DELETED_COUNT=0
+          DELETED_LIST=""
+          NOT_FOUND_LIST=""
+
+          # Container Apps
+          if [ "${{ steps.delete_apps.outputs.deleted }}" = "true" ]; then
+            DELETED_LIST="${DELETED_LIST}- ✅ Container Apps (tagged with project=ts-azure-health)\n"
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+          else
+            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Container Apps (not found)\n"
+          fi
+
+          # Managed Environment
+          if [ "${{ steps.delete_env.outputs.deleted }}" = "true" ]; then
+            DELETED_LIST="${DELETED_LIST}- ✅ Container Apps Environment: \`${{ steps.identify_resources.outputs.managed_env }}\`\n"
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+          else
+            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Container Apps Environment: \`${{ steps.identify_resources.outputs.managed_env }}\` (not found)\n"
+          fi
+
+          # Managed Identity
+          if [ "${{ steps.delete_identity.outputs.deleted }}" = "true" ]; then
+            DELETED_LIST="${DELETED_LIST}- ✅ Managed Identity: \`${{ steps.identify_resources.outputs.uami }}\`\n"
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+          else
+            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Managed Identity: \`${{ steps.identify_resources.outputs.uami }}\` (not found)\n"
+          fi
+
+          # Key Vault
+          if [ "${{ steps.delete_keyvault.outputs.deleted }}" = "true" ]; then
+            DELETED_LIST="${DELETED_LIST}- ✅ Key Vault: \`${{ steps.identify_resources.outputs.key_vault }}\` (soft-deleted, recoverable for 90 days)\n"
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+          else
+            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Key Vault (not found)\n"
+          fi
+
+          # Log Analytics
+          if [ "${{ steps.delete_logs.outputs.deleted }}" = "true" ]; then
+            DELETED_LIST="${DELETED_LIST}- ✅ Log Analytics Workspace: \`${{ steps.identify_resources.outputs.log_analytics }}\`\n"
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+          else
+            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Log Analytics Workspace: \`${{ steps.identify_resources.outputs.log_analytics }}\` (not found)\n"
+          fi
+
           {
             echo ""
             echo "---"
-            echo "**Status:** ✅ Resource group deletion initiated successfully"
+            echo "### ✅ Deletion Summary"
             echo ""
-            echo "> Note: Deletion is asynchronous and may take several minutes to complete."
+            if [ $DELETED_COUNT -gt 0 ]; then
+              echo "**Status:** Successfully deleted $DELETED_COUNT resource(s)"
+            else
+              echo "**Status:** No resources were found to delete"
+            fi
+            echo ""
+            echo "**Resource Group:** \`$RESOURCE_GROUP\` (✅ preserved for other projects)"
+            echo ""
+            if [ -n "$DELETED_LIST" ]; then
+              echo "**Deleted Resources:**"
+              echo -e "$DELETED_LIST"
+            fi
+            if [ -n "$NOT_FOUND_LIST" ]; then
+              echo "**Resources Not Found:**"
+              echo -e "$NOT_FOUND_LIST"
+            fi
+            echo "> **Note:** Other project resources (e.g., from pwsh-azure-health) remain intact."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Skip deletion
