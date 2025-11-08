@@ -40,8 +40,10 @@ jobs:
 
       - name: Check Azure credentials
         id: check_credentials
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         run: |
-          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+          if [ -z "$AZURE_CLIENT_ID" ]; then
             echo "has_credentials=false" >> $GITHUB_OUTPUT
             echo "⚠️  Azure credentials not configured - skipping what-if preview"
           else
