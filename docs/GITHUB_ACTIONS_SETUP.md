@@ -107,6 +107,28 @@ az identity federated-credential create \
   --audiences api://AzureADTokenExchange
 ```
 
+#### For GitHub Environments (Deploy/Destroy Workflows)
+
+```bash
+# For dev environment
+az identity federated-credential create \
+  --name github-actions-environment-dev \
+  --identity-name id-github-actions-ts-azure-health \
+  --resource-group rg-azure-health-shared \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:stuartshay/ts-azure-health:environment:dev \
+  --audiences api://AzureADTokenExchange
+
+# For prod environment
+az identity federated-credential create \
+  --name github-actions-environment-prod \
+  --identity-name id-github-actions-ts-azure-health \
+  --resource-group rg-azure-health-shared \
+  --issuer https://token.actions.githubusercontent.com \
+  --subject repo:stuartshay/ts-azure-health:environment:prod \
+  --audiences api://AzureADTokenExchange
+```
+
 **Note**: Replace `stuartshay/ts-azure-health` with your actual GitHub repository path (format: `owner/repo`).
 
 ### 4. Grant Azure Permissions
