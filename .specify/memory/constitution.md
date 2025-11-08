@@ -117,22 +117,31 @@ Development environments must be reproducible via Dev Containers. Code quality i
 
 **Rationale**: Inconsistent development environments cause "works on my machine" problems. Pre-commit hooks provide the earliest possible failure point, catching errors before they enter the repository. This reduces CI/CD failures, prevents broken builds, improves code review efficiency, and ensures consistent quality standards across all team members. Automation reduces cognitive load and enables faster onboarding.
 
-**Pre-commit Hook Requirements**:
+**Git Hook Requirements**:
 
 - MUST be installed and configured in every development environment
 - MUST run on every commit without exception
 - MUST include: code linting (ESLint), formatting (Prettier), type checking (TypeScript), file quality checks
 - MUST fail the commit if any check fails
-- MUST be configured via `.pre-commit-config.yaml` at repository root
+- MUST use **Husky** for frontend-specific hooks (configured in `frontend/.husky/`)
+  - Commit message validation (commitlint)
+  - Staged file linting and formatting (lint-staged)
+  - Pre-push validation (type checking, build, Bicep validation)
+- MUST use **pre-commit framework** for infrastructure and repository-wide validation (configured in `.pre-commit-config.yaml`)
+  - File quality checks (trailing whitespace, line endings, large files, private keys)
+  - Infrastructure validation (Bicep linting and building)
+  - Dockerfile linting (hadolint)
+  - General formatting (Prettier for YAML, JSON, Markdown)
 
 **Examples**:
 
-- ✅ Install pre-commit hooks automatically in Dev Container setup
-- ✅ Run ESLint, Prettier, TypeScript, and file checks via pre-commit framework
-- ✅ Fail commits that violate linting, formatting, or type checking rules
-- ✅ Document pre-commit installation in README and development setup guides
-- ❌ Allow commits without pre-commit hooks installed
-- ❌ Use `--no-verify` flag to skip pre-commit checks (requires CONSTITUTION EXCEPTION comment)
+- ✅ Install both Husky (via `npm install` in frontend) and pre-commit framework automatically in Dev Container setup
+- ✅ Run ESLint, Prettier, TypeScript checks on staged frontend files via Husky + lint-staged
+- ✅ Run file quality checks, Bicep validation, and Dockerfile linting via pre-commit framework
+- ✅ Fail commits that violate linting, formatting, or type checking rules from either tool
+- ✅ Document both Husky and pre-commit installation in README and development setup guides
+- ❌ Allow commits without git hooks installed (either Husky or pre-commit)
+- ❌ Use `--no-verify` flag to skip git hook checks (requires CONSTITUTION EXCEPTION comment)
 - ❌ Disable or comment out pre-commit checks "temporarily"
 - ❌ Require developers to manually run linting/formatting before commits
 
@@ -148,7 +157,9 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - Azure SDK: @azure/identity and @azure/keyvault-secrets for Azure resource access
 - Infrastructure: Bicep for Azure resource definitions
 - Code Quality: ESLint 9, Prettier 3, Commitlint for conventional commits
-- Pre-commit Framework: pre-commit with hooks for linting, formatting, type checking, and file validation
+- Git Hooks:
+  - **Husky** for frontend-specific hooks (commit-msg, pre-commit with lint-staged, pre-push)
+  - **pre-commit framework** for infrastructure validation and repository-wide file quality checks
 
 **Forbidden Patterns**:
 
@@ -156,9 +167,9 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - No `any` types without JSDoc justification comment
 - No secrets in environment variables (use Key Vault)
 - No manual Azure resource creation for production
-- No commits without pre-commit hooks installed and running
-- No use of `git commit --no-verify` or `SKIP=` environment variable to bypass pre-commit hooks (requires CONSTITUTION EXCEPTION in commit message if absolutely necessary)
-- No disabling or removing pre-commit hook configurations without architectural review
+- No commits without git hooks installed and running (both Husky and pre-commit framework)
+- No use of `git commit --no-verify` or `SKIP=` environment variable to bypass git hooks (requires CONSTITUTION EXCEPTION in commit message if absolutely necessary)
+- No disabling or removing git hook configurations without architectural review
 
 ## Architectural Constraints
 
