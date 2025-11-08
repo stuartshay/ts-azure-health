@@ -179,12 +179,17 @@ jobs:
             --query id -o tsv)
           echo "uami-id=$UAMI_ID" >> $GITHUB_OUTPUT
 
-          # Get Key Vault URL
+          # Get Key Vault URL (find by tags/prefix since it has unique suffix)
+          KV_NAME=$(az keyvault list \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --query "[?starts_with(name, 'kv-tsazurehealth-${{ github.event.inputs.environment }}')].name | [0]" -o tsv)
+          
           KV_URL=$(az keyvault show \
-            --name ${{ steps.env-vars.outputs.kv-name }} \
+            --name "$KV_NAME" \
             --resource-group ${{ steps.env-vars.outputs.resource-group }} \
             --query properties.vaultUri -o tsv)
           echo "kv-url=$KV_URL" >> $GITHUB_OUTPUT
+          echo "kv-name=$KV_NAME" >> $GITHUB_OUTPUT
 
           # Get Container Apps Environment ID
           ENV_ID=$(az containerapp env show \
