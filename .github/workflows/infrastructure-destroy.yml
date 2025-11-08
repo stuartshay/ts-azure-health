@@ -369,7 +369,21 @@ jobs:
               az keyvault delete \
                 --name "$KEY_VAULT" \
                 --resource-group "$RESOURCE_GROUP"; then
-              echo "✅ Key Vault deleted (soft-delete enabled, can be recovered for 90 days)"
+              echo "✅ Key Vault deleted (soft-deleted, recoverable for 90 days)"
+              
+              # Purge the Key Vault to avoid conflicts on next deployment
+              echo "🗑️ Purging soft-deleted Key Vault to enable recreation..."
+              if retry_azure_operation \
+                "$MAX_RETRY_ATTEMPTS" \
+                "Purge Key Vault $KEY_VAULT" \
+                az keyvault purge \
+                  --name "$KEY_VAULT" \
+                  --location "$LOCATION"; then
+                echo "✅ Key Vault purged permanently"
+              else
+                echo "⚠️  Warning: Failed to purge Key Vault. You may need to purge manually before next deployment."
+              fi
+              
               echo "deleted=true" >> "$GITHUB_OUTPUT"
             else
               echo "❌ Failed to delete Key Vault: $KEY_VAULT"
