@@ -101,10 +101,10 @@ echo -e ""
 echo -e "${CYAN}Checking if Key Vault exists...${NC}"
 if az keyvault show --name "$KEY_VAULT_NAME" > /dev/null 2>&1; then
   echo -e "${YELLOW}⚠️  Key Vault already exists: $KEY_VAULT_NAME${NC}"
-  
+
   # Show existing Key Vault details
   KV_INFO=$(az keyvault show --name "$KEY_VAULT_NAME" --query "{location:location, properties:{enableRbacAuthorization:properties.enableRbacAuthorization, publicNetworkAccess:properties.publicNetworkAccess}, tags:tags}" -o json)
-  
+
   echo -e ""
   echo -e "${GRAY}Existing Key Vault Details:${NC}"
   echo "$KV_INFO" | jq '.'
@@ -120,7 +120,7 @@ DELETED_KV=$(az keyvault list-deleted --query "[?name=='$KEY_VAULT_NAME'].name" 
 if [ -n "$DELETED_KV" ]; then
   echo -e "${YELLOW}⚠️  Key Vault exists in soft-deleted state${NC}"
   echo -e ""
-  
+
   read -p "$(echo -e ${CYAN}Do you want to recover or purge it? [recover/purge/cancel]:${NC} )" -r REPLY
   echo
 
@@ -129,7 +129,7 @@ if [ -n "$DELETED_KV" ]; then
       echo -e "${CYAN}Recovering soft-deleted Key Vault...${NC}"
       az keyvault recover --name "$KEY_VAULT_NAME" --location "$LOCATION" --output none
       echo -e "${GREEN}[OK] Key Vault recovered${NC}"
-      
+
       # Update tags
       echo -e "${CYAN}Updating tags...${NC}"
       az keyvault update \

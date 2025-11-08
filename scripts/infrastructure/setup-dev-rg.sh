@@ -90,10 +90,10 @@ echo -e ""
 echo -e "${CYAN}Checking if resource group exists...${NC}"
 if az group show --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
   echo -e "${YELLOW}⚠️  Resource group already exists: $RESOURCE_GROUP${NC}"
-  
+
   # Show existing resource group details
   RG_INFO=$(az group show --name "$RESOURCE_GROUP" --query "{location:location, provisioningState:properties.provisioningState, tags:tags}" -o json)
-  
+
   echo -e ""
   echo -e "${GRAY}Existing Resource Group Details:${NC}"
   echo "$RG_INFO" | jq '.'
