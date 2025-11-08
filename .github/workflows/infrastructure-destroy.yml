@@ -149,7 +149,7 @@ jobs:
           #   - managedEnvName: 'env-${baseName}-${environment}'
           #   - logAnalyticsWorkspaceName: 'log-${baseName}-${environment}'
           #   - uamiName: 'id-${baseName}-${environment}'
-          #   - keyVaultName: take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
+          # Note: Key Vault is now in rg-azure-health-shared (not managed by this workflow)
           BASE_NAME="tsazurehealth"
           ENV="${{ github.event.inputs.environment }}"
 
@@ -157,11 +157,6 @@ jobs:
           MANAGED_ENV="env-${BASE_NAME}-${ENV}"
           LOG_ANALYTICS="log-${BASE_NAME}-${ENV}"
           UAMI="id-${BASE_NAME}-${ENV}"
-
-          # Key Vault has unique suffix, so we search by prefix pattern
-          KEY_VAULT=$(az keyvault list \
-            --resource-group "$RESOURCE_GROUP" \
-            --query "[?starts_with(name, 'kv-${BASE_NAME}-${ENV}')].name | [0]" -o tsv || echo "")
 
           # Find container apps with project tag
           CONTAINER_APPS=$(az containerapp list \
@@ -172,7 +167,6 @@ jobs:
           echo "managed_env=$MANAGED_ENV" >> "$GITHUB_OUTPUT"
           echo "log_analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
           echo "uami=$UAMI" >> "$GITHUB_OUTPUT"
-          echo "key_vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
           echo "container_apps=$CONTAINER_APPS" >> "$GITHUB_OUTPUT"
 
           # List resources that will be deleted
@@ -188,9 +182,9 @@ jobs:
             echo "- Container App Environment: \`$MANAGED_ENV\`"
             echo "- Log Analytics Workspace: \`$LOG_ANALYTICS\`"
             echo "- Managed Identity: \`$UAMI\`"
-            if [ -n "$KEY_VAULT" ] && [ "$KEY_VAULT" != "null" ]; then
-              echo "- Key Vault: \`$KEY_VAULT\`"
-            fi
+            echo ""
+            echo "#### Resources NOT Deleted"
+            echo "- Key Vault: \`kv-tsazurehealth\` (shared resource in \`rg-azure-health-shared\`)"
             if [ -n "$CONTAINER_APPS" ]; then
               echo ""
               echo "#### Container Apps (tagged with project=ts-azure-health)"
@@ -209,7 +203,7 @@ jobs:
         run: |
           source /tmp/retry-utils.sh
 
-          echo "🗑️ Step 1/5: Deleting container apps..."
+          echo "🗑️ Step 1/4: Deleting container apps..."
 
           # Find container apps with project tag (store in array for proper handling)
           mapfile -t CONTAINER_APPS < <(az containerapp list \
@@ -274,7 +268,7 @@ jobs:
 
           MANAGED_ENV="${{ steps.identify_resources.outputs.managed_env }}"
 
-          echo "🗑️ Step 2/5: Deleting Container Apps managed environment: $MANAGED_ENV"
+          echo "🗑️ Step 2/4: Deleting Container Apps managed environment: $MANAGED_ENV"
 
           if az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             if retry_azure_operation \
@@ -328,7 +322,7 @@ jobs:
 
           UAMI="${{ steps.identify_resources.outputs.uami }}"
 
-          echo "🗑️ Step 3/5: Deleting managed identity: $UAMI"
+          echo "🗑️ Step 3/4: Deleting managed identity: $UAMI"
 
           if az identity show --name "$UAMI" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             if retry_azure_operation \

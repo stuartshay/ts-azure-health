@@ -186,6 +186,33 @@ fi
 
 echo -e ""
 
+# Add resource lock to prevent accidental deletion
+echo -e "${CYAN}Adding resource lock (CanNotDelete)...${NC}"
+LOCK_EXISTS=$(az lock list --resource-group "$RESOURCE_GROUP" --resource-name "$KEY_VAULT_NAME" --resource-type "Microsoft.KeyVault/vaults" --query "[?level=='CanNotDelete'].name" -o tsv)
+
+if [ -n "$LOCK_EXISTS" ]; then
+  echo -e "${YELLOW}⚠️  CanNotDelete lock already exists${NC}"
+else
+  az lock create \
+    --name "DoNotDeleteSharedKeyVault" \
+    --lock-type CanNotDelete \
+    --resource-group "$RESOURCE_GROUP" \
+    --resource-name "$KEY_VAULT_NAME" \
+    --resource-type "Microsoft.KeyVault/vaults" \
+    --notes "Protects shared Key Vault from accidental deletion. Remove lock before deleting." \
+    --output none
+
+  if [ $? -eq 0 ]; then
+    echo -e "${GREEN}[OK] Resource lock applied: DoNotDeleteSharedKeyVault${NC}"
+    echo -e "${GRAY}  This Key Vault cannot be deleted unless the lock is removed first.${NC}"
+  else
+    echo -e "${RED}Error: Failed to create resource lock${NC}"
+    exit 1
+  fi
+fi
+
+echo -e ""
+
 # Verify and show details
 echo -e "${CYAN}Verifying Key Vault...${NC}"
 KV_DETAILS=$(az keyvault show --name "$KEY_VAULT_NAME" --output json)
