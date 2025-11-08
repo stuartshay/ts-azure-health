@@ -173,6 +173,7 @@ jobs:
           echo "log_analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
           echo "uami=$UAMI" >> "$GITHUB_OUTPUT"
           echo "key_vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
+          echo "container_apps=$CONTAINER_APPS" >> "$GITHUB_OUTPUT"
 
           # List resources that will be deleted
           {
