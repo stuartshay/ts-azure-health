@@ -20,12 +20,6 @@ param acrName string = 'azureconnectedservicesacr'
 @description('Azure Container Registry Resource Group name')
 param acrResourceGroup string = 'AzureConnectedServices-RG'
 
-@description('Container image tag version')
-param imageTag string = 'latest'
-
-@description('Public FQDN ingress (true = external)')
-param externalIngress bool = true
-
 @description('Current date for tagging (automatically set)')
 param currentDate string = utcNow('yyyy-MM-dd')
 
@@ -35,7 +29,6 @@ var uniqueSuffix = uniqueString(resourceGroup().id)
 // The take() function ensures we don't exceed this limit by truncating if needed
 // Format: kv-{baseName}-{env}-{unique} where unique is 13 chars from uniqueString()
 var keyVaultName = take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
-var containerAppName = 'app-${baseName}-${environment}'
 var managedEnvName = 'env-${baseName}-${environment}'
 var uamiName = 'id-${baseName}-${environment}'
 
@@ -112,54 +105,6 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2025-07-01' = {
   }
 }
 
-resource app 'Microsoft.App/containerApps@2025-07-01' = {
-  name: containerAppName
-  location: location
-  tags: commonTags
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${uami.id}': {}
-    }
-  }
-  properties: {
-    managedEnvironmentId: acaEnv.id
-    configuration: {
-      activeRevisionsMode: 'Single'
-      ingress: {
-        external: externalIngress
-        targetPort: 3000
-      }
-      registries: [
-        {
-          server: acrRoleAssignment.outputs.acrLoginServer
-          identity: uami.id
-        }
-      ]
-      secrets: []
-      dapr: {
-        enabled: false
-      }
-    }
-    template: {
-      containers: [
-        {
-          image: '${acrRoleAssignment.outputs.acrLoginServer}/ts-azure-health-frontend:${imageTag}'
-          name: 'frontend'
-          env: [
-            { name: 'KV_URL', value: kv.properties.vaultUri }
-          ]
-          probes: []
-        }
-      ]
-      scale: {
-        minReplicas: 1
-        maxReplicas: 1
-      }
-    }
-  }
-}
-
 // RBAC: grant the UAMI "Key Vault Secrets User" role on the vault
 resource roleDef 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: subscription()
@@ -177,11 +122,11 @@ resource kvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 // Outputs
-output containerAppName string = app.name
-output containerAppUrl string = 'https://${app.properties.configuration.ingress.fqdn}'
 output keyVaultName string = kv.name
 output keyVaultUrl string = kv.properties.vaultUri
 output managedIdentityName string = uami.name
 output managedIdentityPrincipalId string = uami.properties.principalId
+output managedEnvironmentId string = acaEnv.id
+output managedEnvironmentName string = acaEnv.name
 output resourceGroupName string = resourceGroup().name
 output environment string = environment

@@ -219,6 +219,23 @@ You can deploy infrastructure using either:
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:pull_request \
      --audiences api://AzureADTokenExchange
+
+   # For GitHub environments (deploy/destroy workflows)
+   az identity federated-credential create \
+     --name github-actions-environment-dev \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health-shared \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:environment:dev \
+     --audiences api://AzureADTokenExchange
+
+   az identity federated-credential create \
+     --name github-actions-environment-prod \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health-shared \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:environment:prod \
+     --audiences api://AzureADTokenExchange
    ```
 
 3. **Grant Permissions**: Assign necessary roles to the managed identity:
@@ -228,6 +245,12 @@ You can deploy infrastructure using either:
    az role assignment create \
      --assignee $CLIENT_ID \
      --role Contributor \
+     --scope /subscriptions/$SUBSCRIPTION_ID
+
+   # User Access Administrator role (required for Bicep to create role assignments)
+   az role assignment create \
+     --assignee $CLIENT_ID \
+     --role "User Access Administrator" \
      --scope /subscriptions/$SUBSCRIPTION_ID
 
    # AcrPush role for pushing images to existing ACR
