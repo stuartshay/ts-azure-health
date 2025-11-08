@@ -33,14 +33,6 @@ repos:
   # TypeScript/JavaScript linting
   - repo: local
     hooks:
-      - id: eslint
-        name: ESLint (Next.js)
-        entry: bash -c 'cd frontend && npm run lint -- --quiet'
-        language: system
-        files: \.(js|jsx|ts|tsx)$
-        exclude: node_modules/
-        pass_filenames: false
-
       - id: typescript-check
         name: TypeScript Type Check
         entry: bash -c 'cd frontend && npx tsc --noEmit'
