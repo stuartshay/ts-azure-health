@@ -207,7 +207,9 @@ jobs:
             echo "❌ Error: Container Apps environment '${{ steps.env-vars.outputs.managed-env }}' not found. Please ensure infrastructure is deployed first."
             exit 1
           fi
-          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT      - name: Create or update Container App
+          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT
+
+      - name: Create or update Container App
         run: |
           echo "🚀 Deploying container app..."
 
