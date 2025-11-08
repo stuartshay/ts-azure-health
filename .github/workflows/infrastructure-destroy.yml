@@ -418,7 +418,7 @@ jobs:
             echo "- Key Vault (soft-deleted, recoverable for 90 days)"
             echo "- Log Analytics Workspace"
             echo ""
-            echo "> **Note:** Container Apps and managed environment deletions are asynchronous and may take several minutes to complete."
+            echo "> **Note:** Container Apps and managed environment deletions have been completed. Other resources were deleted synchronously."
             echo "> Other project resources (e.g., from pwsh-azure-health) remain intact."
           } >> "$GITHUB_STEP_SUMMARY"
 
