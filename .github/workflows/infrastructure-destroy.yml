@@ -217,6 +217,7 @@ jobs:
           if [ -z "$CONTAINER_APPS" ]; then
             echo "ℹ️  No container apps found with project=ts-azure-health tag"
           else
+            # Initiate deletion for all container apps
             for app in $CONTAINER_APPS; do
               echo "  Deleting container app: $app"
               retry_azure_operation \
@@ -229,8 +230,35 @@ jobs:
                   --no-wait
             done
             echo "✅ Container app deletion initiated"
-            echo "⏳ Waiting 30 seconds for container apps to begin deletion..."
-            sleep 30
+
+            # Poll until all container apps are fully deleted
+            echo "⏳ Polling until all container apps are deleted..."
+            MAX_POLL_ATTEMPTS=60  # 10 minutes max (60 * 10 seconds)
+            POLL_INTERVAL=10
+            attempt=1
+
+            while [ $attempt -le $MAX_POLL_ATTEMPTS ]; do
+              # Check if any container apps with our project tag still exist
+              REMAINING_APPS=$(az containerapp list \
+                --resource-group "$RESOURCE_GROUP" \
+                --query "[?tags.project=='ts-azure-health'].name" -o tsv 2>/dev/null || echo "")
+
+              if [ -z "$REMAINING_APPS" ]; then
+                echo "✅ All container apps deleted successfully"
+                break
+              fi
+
+              echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: $(echo "$REMAINING_APPS" | wc -w) app(s) still deleting..."
+              
+              if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
+                echo "❌ Timeout waiting for container apps to delete. Remaining apps:"
+                echo "$REMAINING_APPS"
+                exit 1
+              fi
+
+              sleep $POLL_INTERVAL
+              attempt=$((attempt + 1))
+            done
           fi
 
       - name: Delete managed environment
@@ -253,8 +281,29 @@ jobs:
                 --yes \
                 --no-wait; then
               echo "✅ Managed environment deletion initiated"
-              echo "⏳ Waiting 30 seconds for environment to begin deletion..."
-              sleep 30
+
+              # Poll until environment is fully deleted
+              echo "⏳ Polling until managed environment is deleted..."
+              MAX_POLL_ATTEMPTS=60  # 10 minutes max
+              POLL_INTERVAL=10
+              attempt=1
+
+              while [ $attempt -le $MAX_POLL_ATTEMPTS ]; do
+                if ! az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
+                  echo "✅ Managed environment deleted successfully"
+                  break
+                fi
+
+                echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: Environment still deleting..."
+
+                if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
+                  echo "❌ Timeout waiting for managed environment to delete: $MANAGED_ENV"
+                  exit 1
+                fi
+
+                sleep $POLL_INTERVAL
+                attempt=$((attempt + 1))
+              done
             else
               echo "❌ Failed to delete managed environment: $MANAGED_ENV"
               exit 1
