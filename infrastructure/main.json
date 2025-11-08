@@ -12,7 +12,11 @@
     "environment": {
       "type": "string",
       "defaultValue": "dev",
-      "allowedValues": ["dev", "staging", "prod"],
+      "allowedValues": [
+        "dev",
+        "staging",
+        "prod"
+      ],
       "metadata": {
         "description": "Environment name (dev, staging, prod)"
       }

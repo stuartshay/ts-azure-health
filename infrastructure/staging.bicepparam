@@ -6,9 +6,7 @@ param environment = 'staging'
 param baseName = 'tsazurehealth'
 param imageTag = 'latest'
 param externalIngress = true
-param externalIngress = true
-// Name of the Azure Container Registry to use for storing and retrieving container images
+// Name of the Azure Container Registry (ACR) to use for storing and retrieving container images
 param acrName = 'azureconnectedservicesacr'
-// Resource group where the Azure Container Registry is located
-// Resource group where the Azure Container Registry is located
+// Resource group where the Azure Container Registry (ACR) is located
 param acrResourceGroup = 'AzureConnectedServices-RG'
