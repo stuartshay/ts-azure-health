@@ -27,6 +27,9 @@
       "version": "latest",
       "ppa": true
     },
+    "ghcr.io/frntn/devcontainers-features/newman:1": {
+      "version": "latest"
+    },
     "ghcr.io/devcontainers-extra/features/uv:1": {
       "version": "latest"
     },
@@ -34,6 +37,9 @@
       "version": "latest"
     },
     "ghcr.io/devcontainers-community/npm-features/prettier:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/shellcheck:1": {
       "version": "latest"
     },
     "ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {
