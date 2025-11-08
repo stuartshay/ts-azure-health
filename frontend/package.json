@@ -38,8 +38,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "prettier --write",
-      "next lint --fix"
+      "next lint --fix",
+      "prettier --write"
     ],
     "*.{json,md}": [
       "prettier --write"
