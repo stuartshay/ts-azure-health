@@ -4,6 +4,46 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 
 ## Available Scripts
 
+### setup-shared-rg.sh
+
+**Sets up the shared resource group for CI/CD infrastructure (GitHub Actions managed identity).**
+
+**Usage:**
+
+```bash
+# Create with defaults (eastus)
+./setup-shared-rg.sh
+
+# Create in different region
+./setup-shared-rg.sh -l westus2
+```
+
+**Options:**
+
+- `-l, --location LOCATION` - Azure region for deployment (default: eastus)
+- `-h, --help` - Display help message
+
+**What it creates:**
+
+- Resource Group: `rg-azure-health-shared`
+- Tags: `purpose=cicd`, `lifecycle=permanent`, `project=ts-azure-health`
+
+**Features:**
+
+- Checks if resource group already exists
+- Offers to update tags if resource group exists
+- Shows detailed resource group information
+- Provides next steps for managed identity creation
+- **Idempotent** - safe to run multiple times
+
+**Prerequisites:**
+
+- Azure CLI installed and authenticated (`az login`)
+- Contributor permissions on the subscription
+- jq installed for JSON parsing
+
+**⚠️ IMPORTANT:** This resource group is permanent and should **NEVER** be deleted. It contains the GitHub Actions managed identity required for all CI/CD workflows across all environments.
+
 ### deploy-bicep.sh
 
 **Deploys Azure infrastructure using Bicep template.**

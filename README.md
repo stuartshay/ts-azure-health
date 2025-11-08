@@ -161,16 +161,25 @@ You can deploy infrastructure using either:
    ```bash
    az login
 
-   # Create user-assigned managed identity for GitHub Actions in dev resource group
+   # Create dedicated resource group for shared CI/CD infrastructure
+   # This resource group is permanent and should never be deleted
+   az group create \
+     --name rg-azure-health-shared \
+     --location eastus \
+     --tags purpose=cicd lifecycle=permanent project=ts-azure-health
+
+   # Create user-assigned managed identity for GitHub Actions in shared resource group
+   # Placing this in a dedicated resource group ensures it persists independently
+   # of environment-specific resource groups (dev, staging, prod)
    az identity create \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health-dev \
+     --resource-group rg-azure-health-shared \
      --location eastus
 
    # Get the client ID and tenant ID
    CLIENT_ID=$(az identity show \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health-dev \
+     --resource-group rg-azure-health-shared \
      --query clientId -o tsv)
 
    TENANT_ID=$(az account show --query tenantId -o tsv)
@@ -188,7 +197,7 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-develop \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health-dev \
+     --resource-group rg-azure-health-shared \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
      --audiences api://AzureADTokenExchange
@@ -197,7 +206,7 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-master \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-azure-health-dev \
+     --resource-group rg-azure-health-shared \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
      --audiences api://AzureADTokenExchange

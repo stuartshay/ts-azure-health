@@ -160,6 +160,20 @@ Development environments must be reproducible via Dev Containers. Code quality i
 - No use of `git commit --no-verify` or `SKIP=` environment variable to bypass pre-commit hooks (requires CONSTITUTION EXCEPTION in commit message if absolutely necessary)
 - No disabling or removing pre-commit hook configurations without architectural review
 
+**CLI Command Standards**:
+
+- All terminal commands executed by AI assistants MUST prevent interactive pagers
+- Use `| cat` suffix for commands that may trigger pagers (git, gh, less, more)
+- Use `--no-pager` flag when available (e.g., `git --no-pager`, `gh --no-pager`)
+- Use output limiters (`head`, `tail`, `grep`) to prevent excessive output
+- Never leave commands in pager mode requiring manual `q` to exit
+- Examples:
+  - ✅ `gh secret list | cat`
+  - ✅ `git --no-pager log --oneline -10`
+  - ✅ `az group list --output table | head -20`
+  - ❌ `gh secret list` (may trigger pager)
+  - ❌ `git log` (will trigger pager for long output)
+
 ## Architectural Constraints
 
 **Complexity Limits**:

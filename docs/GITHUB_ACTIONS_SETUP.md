@@ -20,28 +20,39 @@ The deployment workflow uses:
 
 ## Step-by-Step Setup
 
-### 1. Create Azure Resource Group
+### 1. Create Azure Resource Group for Shared CI/CD Infrastructure
 
 ```bash
 az login
-az group create --name rg-azure-health --location eastus
+
+# Create dedicated resource group for shared CI/CD infrastructure
+# This resource group is permanent and contains the GitHub Actions managed identity
+# It should never be deleted as it would break all CI/CD workflows
+az group create \
+  --name rg-azure-health-shared \
+  --location eastus \
+  --tags purpose=cicd lifecycle=permanent project=ts-azure-health
 ```
+
+**Note**: This resource group is separate from environment-specific resource groups (rg-azure-health-dev, rg-azure-health, etc.) to ensure the GitHub Actions identity persists independently of environment lifecycle operations.
 
 ### 2. Create User-Assigned Managed Identity for GitHub Actions
 
-This identity will be used by GitHub Actions to authenticate to Azure using OIDC (federated credentials):
+This identity will be used by GitHub Actions to authenticate to Azure using OIDC (federated credentials).
+
+**Important**: The managed identity is placed in the shared resource group (not environment-specific groups) to ensure it persists independently. If placed in an environment resource group (e.g., rg-azure-health-dev), destroying that environment would delete the identity and break all GitHub Actions workflows across all environments.
 
 ```bash
-# Create the managed identity
+# Create the managed identity in the shared resource group
 az identity create \
   --name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health \
+  --resource-group rg-azure-health-shared \
   --location eastus
 
 # Retrieve the credentials (save these for GitHub secrets)
 CLIENT_ID=$(az identity show \
   --name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health \
+  --resource-group rg-azure-health-shared \
   --query clientId -o tsv)
 
 TENANT_ID=$(az account show --query tenantId -o tsv)
@@ -66,7 +77,7 @@ Set up trust between GitHub Actions and Azure:
 az identity federated-credential create \
   --name github-actions-develop \
   --identity-name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health \
+  --resource-group rg-azure-health-shared \
   --issuer https://token.actions.githubusercontent.com \
   --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
   --audiences api://AzureADTokenExchange
@@ -78,7 +89,7 @@ az identity federated-credential create \
 az identity federated-credential create \
   --name github-actions-master \
   --identity-name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health \
+  --resource-group rg-azure-health-shared \
   --issuer https://token.actions.githubusercontent.com \
   --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
   --audiences api://AzureADTokenExchange
@@ -94,14 +105,14 @@ The managed identity needs permissions to deploy infrastructure and push contain
 # Get the principal ID
 PRINCIPAL_ID=$(az identity show \
   --name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health \
+  --resource-group rg-azure-health-shared \
   --query principalId -o tsv)
 
-# Contributor role for deploying infrastructure
+# Contributor role for subscription (allows creating/managing environment resource groups)
 az role assignment create \
   --assignee $CLIENT_ID \
   --role Contributor \
-  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+  --scope /subscriptions/$SUBSCRIPTION_ID
 
 # AcrPush role for pushing images to existing ACR
 az role assignment create \
@@ -256,7 +267,7 @@ If authentication fails:
 # Verify federated credentials exist
 az identity federated-credential list \
   --identity-name id-github-actions-ts-azure-health \
-  --resource-group rg-azure-health
+  --resource-group rg-azure-health-shared
 
 # Check the subject matches your repository
 # Format: repo:OWNER/REPO:ref:refs/heads/BRANCH
@@ -272,11 +283,11 @@ az role assignment list \
   --assignee $CLIENT_ID \
   --all
 
-# Re-assign if needed
+# Re-assign if needed (subscription scope for creating resource groups)
 az role assignment create \
   --assignee $CLIENT_ID \
   --role Contributor \
-  --scope /subscriptions/$SUBSCRIPTION_ID/resourceGroups/rg-azure-health
+  --scope /subscriptions/$SUBSCRIPTION_ID
 ```
 
 ### ACR Login Failures
@@ -285,7 +296,7 @@ If ACR push fails:
 
 ```bash
 # Verify ACR exists and identity has AcrPush role
-az acr show --name azureconnectedservicesacr --resource-group rg-azure-health
+az acr show --name azureconnectedservicesacr --resource-group AzureConnectedServices-RG
 
 # Grant AcrPush role
 az role assignment create \
