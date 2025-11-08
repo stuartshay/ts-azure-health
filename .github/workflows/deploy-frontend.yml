@@ -49,7 +49,7 @@ jobs:
           BASE_VERSION="${{ steps.package-version.outputs.version }}"
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
 
-          if [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+          if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
             # Production: semantic versioning (1.2.3)
             IMAGE_TAG="$BASE_VERSION"
             TAGS="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$BASE_VERSION"
@@ -169,17 +169,64 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy Bicep infrastructure
-        uses: azure/arm-deploy@v2
-        with:
-          scope: resourcegroup
-          resourceGroupName: ${{ steps.env-vars.outputs.resource-group }}
-          template: ./infrastructure/main.bicep
-          parameters: >
-            imageTag=${{ needs.build-and-push.outputs.image-tag }}
-            acrName=${{ env.ACR_NAME }}
-            acrResourceGroup=${{ env.ACR_RESOURCE_GROUP }}
-          failOnStdErr: false
+      - name: Get managed identity and environment info
+        id: infra-info
+        run: |
+          # Get managed identity ID
+          UAMI_ID=$(az identity show \
+            --name ${{ steps.env-vars.outputs.uami-name }} \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --query id -o tsv)
+          echo "uami-id=$UAMI_ID" >> $GITHUB_OUTPUT
+
+          # Get Key Vault URL
+          KV_URL=$(az keyvault show \
+            --name ${{ steps.env-vars.outputs.kv-name }} \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --query properties.vaultUri -o tsv)
+          echo "kv-url=$KV_URL" >> $GITHUB_OUTPUT
+
+          # Get Container Apps Environment ID
+          ENV_ID=$(az containerapp env show \
+            --name ${{ steps.env-vars.outputs.managed-env }} \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --query id -o tsv)
+          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT
+
+      - name: Create or update Container App
+        run: |
+          echo "🚀 Deploying container app..."
+          
+          # Check if container app exists
+          if az containerapp show \
+            --name ${{ steps.env-vars.outputs.container-app }} \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            &> /dev/null; then
+            echo "📦 Updating existing container app..."
+            az containerapp update \
+              --name ${{ steps.env-vars.outputs.container-app }} \
+              --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+              --image ${{ needs.build-and-push.outputs.full-image }} \
+              --set-env-vars KV_URL=${{ steps.infra-info.outputs.kv-url }}
+          else
+            echo "🆕 Creating new container app..."
+            az containerapp create \
+              --name ${{ steps.env-vars.outputs.container-app }} \
+              --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+              --environment ${{ steps.infra-info.outputs.env-id }} \
+              --image ${{ needs.build-and-push.outputs.full-image }} \
+              --user-assigned ${{ steps.infra-info.outputs.uami-id }} \
+              --registry-server ${{ env.ACR_NAME }}.azurecr.io \
+              --registry-identity ${{ steps.infra-info.outputs.uami-id }} \
+              --target-port 3000 \
+              --ingress external \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --env-vars KV_URL=${{ steps.infra-info.outputs.kv-url }} \
+              --tags environment=${{ github.event.inputs.environment }} project=ts-azure-health managedBy=github-actions
+          fi
 
       - name: Get Container App FQDN
         id: app-url
