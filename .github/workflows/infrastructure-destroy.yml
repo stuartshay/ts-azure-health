@@ -249,7 +249,8 @@ jobs:
                   echo "✅ All container apps deleted successfully"
                   echo "deleted=true" >> "$GITHUB_OUTPUT"
                   break
-                fi              echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: $(echo "$REMAINING_APPS" | wc -w) app(s) still deleting..."
+                fi
+                echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: $(echo "$REMAINING_APPS" | wc -w) app(s) still deleting..."
               
             if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
               echo "❌ Timeout waiting for container apps to delete. Remaining apps:"
