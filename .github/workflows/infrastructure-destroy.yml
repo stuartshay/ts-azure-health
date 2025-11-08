@@ -210,17 +210,17 @@ jobs:
 
           echo "🗑️ Step 1/5: Deleting container apps..."
 
-          # Find container apps with project tag
-          CONTAINER_APPS=$(az containerapp list \
+          # Find container apps with project tag (store in array for proper handling)
+          mapfile -t CONTAINER_APPS < <(az containerapp list \
             --resource-group "$RESOURCE_GROUP" \
             --query "[?tags.project=='ts-azure-health'].name" -o tsv || echo "")
 
-          if [ -z "$CONTAINER_APPS" ]; then
+          if [ ${#CONTAINER_APPS[@]} -eq 0 ] || [ -z "${CONTAINER_APPS[0]}" ]; then
             echo "ℹ️  No container apps found with project=ts-azure-health tag"
             echo "deleted=false" >> "$GITHUB_OUTPUT"
           else
             # Initiate deletion for all container apps
-            for app in $CONTAINER_APPS; do
+            for app in "${CONTAINER_APPS[@]}"; do
               echo "  Deleting container app: $app"
               retry_azure_operation \
                 "$MAX_RETRY_ATTEMPTS" \
