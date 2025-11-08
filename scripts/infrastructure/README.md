@@ -4,11 +4,52 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 
 ## Available Scripts
 
+### setup-shared-rg.sh
+
+**Sets up the shared resource group for CI/CD infrastructure (GitHub Actions managed identity).**
+
+**Usage:**
+
+```bash
+# Create with defaults (eastus)
+./setup-shared-rg.sh
+
+# Create in different region
+./setup-shared-rg.sh -l westus2
+```
+
+**Options:**
+
+- `-l, --location LOCATION` - Azure region for deployment (default: eastus)
+- `-h, --help` - Display help message
+
+**What it creates:**
+
+- Resource Group: `rg-azure-health-shared`
+- Tags: `purpose=cicd`, `lifecycle=permanent`, `project=ts-azure-health`
+
+**Features:**
+
+- Checks if resource group already exists
+- Offers to update tags if resource group exists
+- Shows detailed resource group information
+- Provides next steps for managed identity creation
+- **Idempotent** - safe to run multiple times
+
+**Prerequisites:**
+
+- Azure CLI installed and authenticated (`az login`)
+- Contributor permissions on the subscription
+- jq installed for JSON parsing
+
+**⚠️ IMPORTANT:** This resource group is permanent and should **NEVER** be deleted. It contains the GitHub Actions managed identity required for all CI/CD workflows across all environments.
+
 ### deploy-bicep.sh
 
 **Deploys Azure infrastructure using Bicep template.**
 
 **Usage:**
+
 ```bash
 # Deploy with defaults (dev environment)
 ./deploy-bicep.sh
@@ -21,12 +62,14 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-l, --location LOCATION` - Azure region for deployment (default: eastus)
 - `-w, --whatif` - Preview changes without deploying
 - `-h, --help` - Display help message
 
 **What it creates:**
+
 - Resource Group with environment tagging
 - Azure Container Registry role assignment (AcrPull)
 - User-assigned Managed Identity
@@ -36,6 +79,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 - RBAC role assignments for ACR and Key Vault access
 
 **Features:**
+
 - Idempotent - safe to run multiple times
 - Environment-specific parameter files (dev.bicepparam, prod.bicepparam)
 - Comprehensive error handling and validation
@@ -43,6 +87,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 - Configures all required resources
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Appropriate permissions to create resources and assign roles
 - jq installed for JSON parsing
@@ -52,6 +97,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 **Destroys Azure infrastructure by deleting the resource group.**
 
 **Usage:**
+
 ```bash
 # Destroy dev environment
 ./destroy-bicep.sh
@@ -61,16 +107,19 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-h, --help` - Display help message
 
 **Features:**
+
 - Lists all resources before deletion
 - Requires explicit confirmation
 - Colored output showing what will be deleted
 - Asynchronous deletion (runs in background)
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Appropriate permissions to delete resources
 
@@ -81,6 +130,7 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 **Previews infrastructure changes using Bicep what-if.**
 
 **Usage:**
+
 ```bash
 # Preview changes for dev environment
 ./whatif-bicep.sh
@@ -90,17 +140,20 @@ This folder contains scripts for Azure infrastructure management, deployment, an
 ```
 
 **Options:**
+
 - `-e, --environment ENV` - Environment: dev, staging, or prod (default: dev)
 - `-l, --location LOCATION` - Azure region for deployment (default: eastus)
 - `-h, --help` - Display help message
 
 **Features:**
+
 - Shows what would change without deploying
 - Creates temporary resource group if needed
 - Displays full resource payloads
 - No changes are made to Azure resources
 
 **Prerequisites:**
+
 - Azure CLI installed and authenticated (`az login`)
 - Reader access to the subscription
 
@@ -114,13 +167,15 @@ The scripts use environment-specific parameter files located in `infrastructure/
 Each environment creates isolated resources with unique naming:
 
 **Development (dev):**
-- Resource Group: `rg-ts-azure-health-dev`
+
+- Resource Group: `rg-azure-health-dev`
 - Container App: `app-tsazurehealth-dev`
 - Key Vault: `kv-tsazurehealth-dev-<unique>`
 - Managed Identity: `id-tsazurehealth-dev`
 
 **Production (prod):**
-- Resource Group: `rg-ts-azure-health-prod`
+
+- Resource Group: `rg-azure-health`
 - Container App: `app-tsazurehealth-prod`
 - Key Vault: `kv-tsazurehealth-prod-<unique>`
 - Managed Identity: `id-tsazurehealth-prod`
@@ -137,7 +192,7 @@ Each environment creates isolated resources with unique naming:
 ./deploy-bicep.sh -e dev
 
 # 3. Verify deployment in Azure Portal or CLI
-az resource list --resource-group rg-ts-azure-health-dev --output table
+az resource list --resource-group rg-azure-health-dev --output table
 ```
 
 ### Update Existing Infrastructure
@@ -174,6 +229,7 @@ These workflows use the same Bicep templates and parameter files as the local sc
 ### Authentication Issues
 
 If you get authentication errors:
+
 ```bash
 az login
 az account show
@@ -182,18 +238,21 @@ az account show
 ### Permission Errors
 
 Ensure you have the required roles:
+
 ```bash
 # Check your role assignments
 az role assignment list --assignee $(az account show --query user.name -o tsv)
 ```
 
 Required permissions:
+
 - Contributor role on the resource group
 - User Access Administrator (for RBAC assignments)
 
 ### Parameter File Issues
 
 Ensure parameter files exist:
+
 ```bash
 ls -la infrastructure/*.bicepparam
 ```

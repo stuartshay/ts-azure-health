@@ -50,7 +50,7 @@ var commonTags = {
 // Log Analytics workspace name
 var logAnalyticsWorkspaceName = 'log-${baseName}-${environment}'
 
-resource kv 'Microsoft.KeyVault/vaults@2025-05-01' = {
+resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: keyVaultName
   location: location
   tags: commonTags
@@ -75,7 +75,7 @@ resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
 }
 
 // Log Analytics workspace for Container Apps logs
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2025-02-01' = {
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: logAnalyticsWorkspaceName
   location: location
   tags: commonTags
@@ -97,7 +97,7 @@ module acrRoleAssignment 'modules/acrRoleAssignment.bicep' = {
   }
 }
 
-resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
+resource acaEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: managedEnvName
   location: location
   tags: commonTags
@@ -112,7 +112,7 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2025-01-01' = {
   }
 }
 
-resource app 'Microsoft.App/containerApps@2025-01-01' = {
+resource app 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
   location: location
   tags: commonTags

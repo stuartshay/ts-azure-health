@@ -8,9 +8,9 @@ on:
         required: true
         type: choice
         options:
-          - develop
-          - production
-        default: 'develop'
+          - dev
+          - prod
+        default: 'dev'
 
 permissions:
   id-token: write
@@ -20,8 +20,6 @@ env:
   ACR_NAME: azureconnectedservicesacr
   ACR_RESOURCE_GROUP: AzureConnectedServices-RG
   IMAGE_NAME: ts-azure-health-frontend
-  RESOURCE_GROUP: rg-azure-health
-  CONTAINER_APP_NAME: app-ts-azure-health
 
 jobs:
   build-and-push:
@@ -81,6 +79,10 @@ jobs:
           echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
 
       - name: Log in to Azure
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -139,7 +141,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Set environment-specific variables
+        id: env-vars
+        run: |
+          if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
+            echo "resource-group=rg-azure-health" >> $GITHUB_OUTPUT
+            echo "container-app=app-tsazurehealth-prod" >> $GITHUB_OUTPUT
+            echo "kv-name=kv-tsazurehealth-prod" >> $GITHUB_OUTPUT
+            echo "managed-env=env-tsazurehealth-prod" >> $GITHUB_OUTPUT
+            echo "uami-name=id-tsazurehealth-prod" >> $GITHUB_OUTPUT
+          else
+            echo "resource-group=rg-azure-health-dev" >> $GITHUB_OUTPUT
+            echo "container-app=app-tsazurehealth-dev" >> $GITHUB_OUTPUT
+            echo "kv-name=kv-tsazurehealth-dev" >> $GITHUB_OUTPUT
+            echo "managed-env=env-tsazurehealth-dev" >> $GITHUB_OUTPUT
+            echo "uami-name=id-tsazurehealth-dev" >> $GITHUB_OUTPUT
+          fi
+
       - name: Log in to Azure
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -150,14 +173,10 @@ jobs:
         uses: azure/arm-deploy@v2
         with:
           scope: resourcegroup
-          resourceGroupName: ${{ env.RESOURCE_GROUP }}
+          resourceGroupName: ${{ steps.env-vars.outputs.resource-group }}
           template: ./infrastructure/main.bicep
           parameters: >
             imageTag=${{ needs.build-and-push.outputs.image-tag }}
-            keyVaultName=kv-ts-azure-health-001
-            containerAppName=${{ env.CONTAINER_APP_NAME }}
-            managedEnvName=env-ts-azure-health
-            uamiName=id-ts-azure-health
             acrName=${{ env.ACR_NAME }}
             acrResourceGroup=${{ env.ACR_RESOURCE_GROUP }}
           failOnStdErr: false
@@ -166,8 +185,8 @@ jobs:
         id: app-url
         run: |
           FQDN=$(az containerapp show \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --name ${{ steps.env-vars.outputs.container-app }} \
+            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
             --query properties.configuration.ingress.fqdn \
             --output tsv)
           echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
@@ -178,8 +197,8 @@ jobs:
           echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Resource Group:** ${{ env.RESOURCE_GROUP }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Container App:** ${{ env.CONTAINER_APP_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Resource Group:** ${{ steps.env-vars.outputs.resource-group }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Container App:** ${{ steps.env-vars.outputs.container-app }}" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ needs.build-and-push.outputs.full-image }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🌐 Application URL" >> $GITHUB_STEP_SUMMARY

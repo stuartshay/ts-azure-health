@@ -1,5 +1,3 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-cd frontend
+cd "$(dirname "$0")/../.." && cd frontend || exit 1
 npx lint-staged

@@ -27,7 +27,16 @@
       "version": "latest",
       "ppa": true
     },
-    "ghcr.io/gvatsal60/dev-container-features/uv:1": {
+    "ghcr.io/devcontainers-extra/features/uv:1": {
+      "version": "latest"
+    },
+    "ghcr.io/dhoeric/features/hadolint:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-community/npm-features/prettier:1": {
+      "version": "latest"
+    },
+    "ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {
       "version": "latest"
     }
   },
@@ -67,7 +76,6 @@
         "ms-azuretools.vscode-bicep",
         "ms-azuretools.vscode-azurecontainerapps",
         "ms-azuretools.vscode-azurestorage",
-        "ms-vscode.azure-account",
         "ms-azuretools.azure-dev",
 
         // Docker & Containers
@@ -104,6 +112,10 @@
         "ms-vscode.makefile-tools",
         "waderyan.gitblame",
         "github.vscode-github-actions",
+
+        // AI
+        "saoudrizwan.claude-de",
+        "openai.chatgpt",
 
         // JSON & Configuration
         "tamasfe.even-better-toml",

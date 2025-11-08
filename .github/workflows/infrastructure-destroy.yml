@@ -22,7 +22,7 @@ env:
 
 jobs:
   destroy:
-    name: Destroy ${{ github.event.inputs.environment }} infrastructure
+    name: Destroy ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
@@ -120,7 +120,11 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "RESOURCE_GROUP=rg-ts-azure-health-${{ github.event.inputs.environment }}" >> "$GITHUB_ENV"
+          if [ "${{ github.event.inputs.environment }}" = "prod" ]; then
+            echo "RESOURCE_GROUP=rg-azure-health" >> "$GITHUB_ENV"
+          else
+            echo "RESOURCE_GROUP=rg-azure-health-${{ github.event.inputs.environment }}" >> "$GITHUB_ENV"
+          fi
 
       - name: Check if resource group exists
         id: check_rg

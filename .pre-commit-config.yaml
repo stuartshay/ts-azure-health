@@ -34,13 +34,12 @@ repos:
   - repo: local
     hooks:
       - id: eslint
-        name: ESLint (Next.js)
-        entry: bash -c 'cd frontend && npm run lint -- --quiet'
+        name: ESLint
+        entry: bash -c 'cd frontend && npx eslint --max-warnings=0 "$@"'
         language: system
         files: \.(js|jsx|ts|tsx)$
         exclude: node_modules/
-        pass_filenames: false
-
+        pass_filenames: true
       - id: typescript-check
         name: TypeScript Type Check
         entry: bash -c 'cd frontend && npx tsc --noEmit'
@@ -58,6 +57,17 @@ repos:
         # DL3008: Pin apt package versions - skipped for base images
         # DL3009: Delete apt cache - handled by base images
         args: ['--ignore', 'DL3008', '--ignore', 'DL3009']
+
+  # Bicep linting and validation
+  - repo: local
+    hooks:
+      - id: bicep-lint
+        name: Bicep Lint & Build
+        description: Validate Bicep syntax, types, and API versions using Azure CLI
+        entry: bash -c 'for file in "$@"; do echo "Checking $file..."; az bicep build --file "$file" --stdout > /dev/null || exit 1; done' --
+        language: system
+        files: \.bicep$
+        pass_filenames: true
 
   # Markdown formatting
   - repo: https://github.com/pre-commit/mirrors-prettier

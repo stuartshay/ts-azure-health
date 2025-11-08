@@ -38,7 +38,7 @@ steps:
 If you have admin access to the repository, you can also:
 
 1. **Add to allowlist**: Go to [Copilot coding agent settings](https://github.com/stuartshay/ts-azure-health/settings/copilot/coding_agent)
-2. **Add domains**: 
+2. **Add domains**:
    - `aka.ms`
    - `github.com/Azure/bicep/*` (for direct downloads)
 
@@ -63,7 +63,7 @@ bicep build-params infrastructure/dev.bicepparam --stdout
 
 # What-if deployment (requires Azure login)
 az deployment group what-if \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file infrastructure/main.bicep \
   --parameters infrastructure/dev.bicepparam
 ```
@@ -74,7 +74,8 @@ az deployment group what-if \
 
 **Cause**: Copilot coding agent cannot access `aka.ms` after firewall is enabled.
 
-**Solution**: 
+**Solution**:
+
 1. Ensure `.github/workflows/copilot.yml` exists and is properly configured
 2. Bicep CLI should be installed during setup steps
 3. Avoid running `bicep build` commands in scripts that the agent executes
@@ -84,6 +85,7 @@ az deployment group what-if \
 **Cause**: Bicep tries to restore modules from online sources.
 
 **Solution**:
+
 1. Pre-cache modules in the setup workflow
 2. Use local Bicep modules (in `infrastructure/modules/`)
 3. Avoid external module references like `br/public:...`

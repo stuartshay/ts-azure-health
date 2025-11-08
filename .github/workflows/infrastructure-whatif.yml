@@ -28,6 +28,7 @@ permissions:
 env:
   MAX_RETRY_ATTEMPTS: 5
   RETRY_BASE_DELAY: 2
+  LOCATION: eastus
 
 jobs:
   whatif:
@@ -39,8 +40,10 @@ jobs:
 
       - name: Check Azure credentials
         id: check_credentials
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         run: |
-          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ]; then
+          if [ -z "$AZURE_CLIENT_ID" ]; then
             echo "has_credentials=false" >> $GITHUB_OUTPUT
             echo "⚠️  Azure credentials not configured - skipping what-if preview"
           else
@@ -49,14 +52,31 @@ jobs:
 
       - name: Azure login
         if: steps.check_credentials.outputs.has_credentials == 'true'
+        id: azure_login
+        continue-on-error: true
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Setup retry utilities
+      - name: Check login status
         if: steps.check_credentials.outputs.has_credentials == 'true'
+        id: login_status
+        run: |
+          if [ "${{ steps.azure_login.outcome }}" = "success" ]; then
+            echo "login_successful=true" >> $GITHUB_OUTPUT
+            echo "✅ Azure login successful"
+          else
+            echo "login_successful=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Azure login failed - credentials may be invalid or expired"
+          fi
+
+      - name: Setup retry utilities
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true'
         shell: bash
         run: |
           # Create retry function for Azure operations
@@ -139,26 +159,21 @@ jobs:
           echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
 
       - name: Run What-If for Dev environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
         id: whatif_dev
         continue-on-error: true
         shell: bash
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-dev"
+          RESOURCE_GROUP="rg-azure-health-dev"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=dev \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
+            echo "Skipping what-if for dev environment."
+            exit 0
           fi
 
           echo "Running what-if for Dev environment..."
@@ -181,26 +196,21 @@ jobs:
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Staging environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
         id: whatif_staging
         continue-on-error: true
         shell: bash
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-staging"
+          RESOURCE_GROUP="rg-azure-health-staging"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=staging \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
+            echo "Skipping what-if for staging environment."
+            exit 0
           fi
 
           echo "Running what-if for Staging environment..."
@@ -223,26 +233,21 @@ jobs:
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Prod environment
-        if: steps.check_credentials.outputs.has_credentials == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
         id: whatif_prod
         continue-on-error: true
         shell: bash
         run: |
           source /tmp/retry-utils.sh
 
-          RESOURCE_GROUP="rg-ts-azure-health-prod"
+          RESOURCE_GROUP="rg-azure-health"
 
-          # Create resource group if it doesn't exist (for what-if to work)
+          # Check if resource group exists
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
-            echo "📦 Creating resource group for what-if: $RESOURCE_GROUP"
-            retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Create resource group $RESOURCE_GROUP" \
-              az group create \
-                --name "$RESOURCE_GROUP" \
-                --location eastus \
-                --tags environment=prod \
-                --output none
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist."
+            echo "Please create it manually with: az group create --name $RESOURCE_GROUP --location $LOCATION"
+            echo "Skipping what-if for prod environment."
+            exit 0
           fi
 
           echo "Running what-if for Prod environment..."
@@ -270,8 +275,9 @@ jobs:
           script: |
             const fs = require('fs');
 
-            // Check if credentials were available
+            // Check if credentials were available and login was successful
             const hasCredentials = '${{ steps.check_credentials.outputs.has_credentials }}' === 'true';
+            const loginSuccessful = '${{ steps.login_status.outputs.login_successful }}' === 'true';
 
             let summary = '';
 
@@ -287,6 +293,18 @@ jobs:
               - \`AZURE_CLIENT_ID\`
               - \`AZURE_TENANT_ID\`
               - \`AZURE_SUBSCRIPTION_ID\``;
+            } else if (!loginSuccessful) {
+              summary = `⚠️  **Azure login failed**
+
+              Azure credentials are configured but login failed. This could indicate:
+              - Expired or invalid credentials
+              - Incorrect secret values
+              - Permission issues with the service principal
+
+              Please verify your Azure credentials and update the repository secrets if needed.
+
+              To update credentials, follow the setup instructions in:
+              - [docs/GITHUB_ACTIONS_SETUP.md](https://github.com/${{ github.repository }}/blob/develop/docs/GITHUB_ACTIONS_SETUP.md)`;
             } else {
               // Read the what-if summary
               try {
@@ -298,12 +316,12 @@ jobs:
 
             const body = `## 🔍 Infrastructure What-If Preview
 
-            This PR modifies infrastructure files. ${hasCredentials ? "Here's a preview of what would change when deployed:" : ''}
+            This PR modifies infrastructure files. ${hasCredentials && loginSuccessful ? "Here's a preview of what would change when deployed:" : ''}
 
             ${summary}
 
             ---
-            <sub>💡 ${hasCredentials ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure Azure credentials to enable infrastructure change previews.'}</sub>
+            <sub>💡 ${hasCredentials && loginSuccessful ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure valid Azure credentials to enable infrastructure change previews.'}</sub>
             `;
 
             // Find existing comment

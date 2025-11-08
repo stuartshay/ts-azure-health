@@ -1,5 +1,7 @@
 # TS Azure Health — Frontend Starter (Next.js + BFF + Key Vault + ACA)
 
+[![Deploy Infrastructure](https://github.com/stuartshay/ts-azure-health/actions/workflows/infrastructure-deploy.yml/badge.svg)](https://github.com/stuartshay/ts-azure-health/actions/workflows/infrastructure-deploy.yml)
+
 [![Deploy Frontend to ACR and Azure Container Apps](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/stuartshay/ts-azure-health/actions/workflows/deploy-frontend.yml)
 
 Minimal, production-friendly skeleton to:
@@ -129,13 +131,14 @@ This project supports multi-environment deployments using infrastructure as code
 Each environment has isolated resources:
 
 - **Development (dev)**
-  - Resource Group: `rg-ts-azure-health-dev`
+
+  - Resource Group: `rg-azure-health-dev`
   - Container App: `app-tsazurehealth-dev`
   - Key Vault: `kv-tsazurehealth-dev-<unique>`
   - Managed Identity: `id-tsazurehealth-dev`
 
 - **Production (prod)**
-  - Resource Group: `rg-ts-azure-health-prod`
+  - Resource Group: `rg-azure-health`
   - Container App: `app-tsazurehealth-prod`
   - Key Vault: `kv-tsazurehealth-prod-<unique>`
   - Managed Identity: `id-tsazurehealth-prod`
@@ -143,6 +146,7 @@ Each environment has isolated resources:
 ### Deployment Methods
 
 You can deploy infrastructure using either:
+
 1. **GitHub Actions workflows** (recommended for CI/CD)
 2. **Local CLI scripts** (recommended for local development and testing)
 
@@ -156,20 +160,26 @@ You can deploy infrastructure using either:
 
    ```bash
    az login
-   
-   # Create resource group for GitHub Actions identity
-   az group create --name rg-ts-azure-health-github --location eastus
 
-   # Create user-assigned managed identity for GitHub Actions
+   # Create dedicated resource group for shared CI/CD infrastructure
+   # This resource group is permanent and should never be deleted
+   az group create \
+     --name rg-azure-health-shared \
+     --location eastus \
+     --tags purpose=cicd lifecycle=permanent project=ts-azure-health
+
+   # Create user-assigned managed identity for GitHub Actions in shared resource group
+   # Placing this in a dedicated resource group ensures it persists independently
+   # of environment-specific resource groups (dev, staging, prod)
    az identity create \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-shared \
      --location eastus
 
    # Get the client ID and tenant ID
    CLIENT_ID=$(az identity show \
      --name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-shared \
      --query clientId -o tsv)
 
    TENANT_ID=$(az account show --query tenantId -o tsv)
@@ -187,7 +197,7 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-develop \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-shared \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/develop \
      --audiences api://AzureADTokenExchange
@@ -196,9 +206,18 @@ You can deploy infrastructure using either:
    az identity federated-credential create \
      --name github-actions-master \
      --identity-name id-github-actions-ts-azure-health \
-     --resource-group rg-ts-azure-health-github \
+     --resource-group rg-azure-health-shared \
      --issuer https://token.actions.githubusercontent.com \
      --subject repo:stuartshay/ts-azure-health:ref:refs/heads/master \
+     --audiences api://AzureADTokenExchange
+
+   # For pull requests
+   az identity federated-credential create \
+     --name github-actions-pull-request \
+     --identity-name id-github-actions-ts-azure-health \
+     --resource-group rg-azure-health-shared \
+     --issuer https://token.actions.githubusercontent.com \
+     --subject repo:stuartshay/ts-azure-health:pull_request \
      --audiences api://AzureADTokenExchange
    ```
 
@@ -233,11 +252,13 @@ You can deploy infrastructure using either:
 **Infrastructure Management:**
 
 - **Deploy Infrastructure** (`infrastructure-deploy.yml`)
+
   - Go to Actions → "Deploy Infrastructure" → "Run workflow"
   - Select environment: `dev` or `prod`
   - Deploys all Azure resources using Bicep
 
 - **Destroy Infrastructure** (`infrastructure-destroy.yml`)
+
   - Go to Actions → "Destroy Infrastructure" → "Run workflow"
   - Select environment: `dev` or `prod`
   - Deletes all resources in the environment
@@ -256,11 +277,13 @@ You can deploy infrastructure using either:
 #### Deployment Workflow
 
 1. **Deploy Infrastructure First:**
+
    ```
    Actions → Deploy Infrastructure → Select "dev" → Run workflow
    ```
 
 2. **Deploy Application:**
+
    ```
    Actions → Deploy Frontend → Select "develop" → Run workflow
    ```
@@ -318,6 +341,7 @@ For local development and testing, use the Bash scripts in `scripts/infrastructu
 #### Available Scripts
 
 1. **Deploy Infrastructure:**
+
    ```bash
    # Deploy to dev environment
    ./scripts/infrastructure/deploy-bicep.sh
@@ -330,6 +354,7 @@ For local development and testing, use the Bash scripts in `scripts/infrastructu
    ```
 
 2. **Preview Changes (What-If):**
+
    ```bash
    # Preview dev environment changes
    ./scripts/infrastructure/whatif-bicep.sh
@@ -339,6 +364,7 @@ For local development and testing, use the Bash scripts in `scripts/infrastructu
    ```
 
 3. **Destroy Infrastructure:**
+
    ```bash
    # Destroy dev environment (requires confirmation)
    ./scripts/infrastructure/destroy-bicep.sh
@@ -350,34 +376,37 @@ For local development and testing, use the Bash scripts in `scripts/infrastructu
 #### Local Deployment Workflow
 
 1. **Preview what will be created:**
+
    ```bash
    ./scripts/infrastructure/whatif-bicep.sh -e dev
    ```
 
 2. **Deploy infrastructure:**
+
    ```bash
    ./scripts/infrastructure/deploy-bicep.sh -e dev
    ```
 
 3. **Deploy frontend application** (after infrastructure is ready):
+
    ```bash
    # Build and push Docker image
    cd frontend
    docker build -t azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest .
    az acr login --name azureconnectedservicesacr
    docker push azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
-   
+
    # Update Container App
    az containerapp update \
      --name app-tsazurehealth-dev \
-     --resource-group rg-ts-azure-health-dev \
+     --resource-group rg-azure-health-dev \
      --image azureconnectedservicesacr.azurecr.io/ts-azure-health-frontend:latest
    ```
 
 4. **View deployment details:**
    ```bash
-   az resource list --resource-group rg-ts-azure-health-dev --output table
-   az containerapp show --name app-tsazurehealth-dev --resource-group rg-ts-azure-health-dev
+   az resource list --resource-group rg-azure-health-dev --output table
+   az containerapp show --name app-tsazurehealth-dev --resource-group rg-azure-health-dev
    ```
 
 See [scripts/infrastructure/README.md](scripts/infrastructure/README.md) for detailed documentation on local scripts.
@@ -409,19 +438,19 @@ Deploy `infrastructure/main.bicep` using environment-specific parameter files:
 
 ```bash
 # Create resource group for dev environment
-az group create --name rg-ts-azure-health-dev --location eastus
+az group create --name rg-azure-health-dev --location eastus
 
 # Deploy infrastructure to dev
 az deployment group create \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --template-file infrastructure/main.bicep \
   --parameters infrastructure/dev.bicepparam
 
 # Or for production
-az group create --name rg-ts-azure-health-prod --location eastus
+az group create --name rg-azure-health --location eastus
 
 az deployment group create \
-  --resource-group rg-ts-azure-health-prod \
+  --resource-group rg-azure-health \
   --template-file infrastructure/main.bicep \
   --parameters infrastructure/prod.bicepparam
 ```
@@ -443,7 +472,7 @@ After deployment, add environment variables to your Container App through the Az
 # For dev environment
 az containerapp update \
   --name app-tsazurehealth-dev \
-  --resource-group rg-ts-azure-health-dev \
+  --resource-group rg-azure-health-dev \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
@@ -455,7 +484,7 @@ az containerapp update \
 # For prod environment
 az containerapp update \
   --name app-tsazurehealth-prod \
-  --resource-group rg-ts-azure-health-prod \
+  --resource-group rg-azure-health \
   --set-env-vars \
     "NEXT_PUBLIC_AAD_CLIENT_ID=<your-spa-client-id>" \
     "NEXT_PUBLIC_AAD_TENANT_ID=<your-tenant-id>" \
@@ -475,6 +504,7 @@ This project uses Bicep templates for infrastructure management:
 - **`infrastructure/modules/`** - Reusable Bicep modules
 
 The infrastructure supports:
+
 - Multi-environment deployments (dev, staging, prod)
 - Automatic resource naming with environment suffixes
 - RBAC-based access control
