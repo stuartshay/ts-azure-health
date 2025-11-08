@@ -143,15 +143,25 @@ jobs:
         run: |
           echo "🔍 Identifying resources created by ts-azure-health project..."
 
-          # Define resource name patterns based on Bicep template
-          MANAGED_ENV="env-tsazurehealth-${{ github.event.inputs.environment }}"
-          LOG_ANALYTICS="log-tsazurehealth-${{ github.event.inputs.environment }}"
-          UAMI="id-tsazurehealth-${{ github.event.inputs.environment }}"
+          # Define naming convention variables to match Bicep template (infrastructure/main.bicep)
+          # Bicep: param baseName string = 'tsazurehealth'
+          # Bicep naming patterns:
+          #   - managedEnvName: 'env-${baseName}-${environment}'
+          #   - logAnalyticsWorkspaceName: 'log-${baseName}-${environment}'
+          #   - uamiName: 'id-${baseName}-${environment}'
+          #   - keyVaultName: take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
+          BASE_NAME="tsazurehealth"
+          ENV="${{ github.event.inputs.environment }}"
 
-          # Find Key Vault with dynamic prefix (has unique suffix)
+          # Construct resource names using Bicep naming convention
+          MANAGED_ENV="env-${BASE_NAME}-${ENV}"
+          LOG_ANALYTICS="log-${BASE_NAME}-${ENV}"
+          UAMI="id-${BASE_NAME}-${ENV}"
+
+          # Key Vault has unique suffix, so we search by prefix pattern
           KEY_VAULT=$(az keyvault list \
             --resource-group "$RESOURCE_GROUP" \
-            --query "[?starts_with(name, 'kv-tsazurehealth-${{ github.event.inputs.environment }}')].name | [0]" -o tsv || echo "")
+            --query "[?starts_with(name, 'kv-${BASE_NAME}-${ENV}')].name | [0]" -o tsv || echo "")
 
           # Find container apps with project tag
           CONTAINER_APPS=$(az containerapp list \
