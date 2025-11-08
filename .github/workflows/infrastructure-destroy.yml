@@ -244,17 +244,21 @@ jobs:
           echo "🗑️ Step 2/5: Deleting Container Apps managed environment: $MANAGED_ENV"
 
           if az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
-            retry_azure_operation \
+            if retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
               "Delete managed environment $MANAGED_ENV" \
               az containerapp env delete \
                 --name "$MANAGED_ENV" \
                 --resource-group "$RESOURCE_GROUP" \
                 --yes \
-                --no-wait
-            echo "✅ Managed environment deletion initiated"
-            echo "⏳ Waiting 30 seconds for environment to begin deletion..."
-            sleep 30
+                --no-wait; then
+              echo "✅ Managed environment deletion initiated"
+              echo "⏳ Waiting 30 seconds for environment to begin deletion..."
+              sleep 30
+            else
+              echo "❌ Failed to delete managed environment: $MANAGED_ENV"
+              exit 1
+            fi
           else
             echo "ℹ️  Managed environment not found: $MANAGED_ENV"
           fi
@@ -270,13 +274,17 @@ jobs:
           echo "🗑️ Step 3/5: Deleting managed identity: $UAMI"
 
           if az identity show --name "$UAMI" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
-            retry_azure_operation \
+            if retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
               "Delete managed identity $UAMI" \
               az identity delete \
                 --name "$UAMI" \
-                --resource-group "$RESOURCE_GROUP"
-            echo "✅ Managed identity deleted"
+                --resource-group "$RESOURCE_GROUP"; then
+              echo "✅ Managed identity deleted"
+            else
+              echo "❌ Failed to delete managed identity: $UAMI"
+              exit 1
+            fi
           else
             echo "ℹ️  Managed identity not found: $UAMI"
           fi
@@ -294,13 +302,17 @@ jobs:
           else
             echo "🗑️ Step 4/5: Deleting Key Vault: $KEY_VAULT"
 
-            retry_azure_operation \
+            if retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
               "Delete Key Vault $KEY_VAULT" \
               az keyvault delete \
                 --name "$KEY_VAULT" \
-                --resource-group "$RESOURCE_GROUP"
-            echo "✅ Key Vault deleted (soft-delete enabled, can be recovered for 90 days)"
+                --resource-group "$RESOURCE_GROUP"; then
+              echo "✅ Key Vault deleted (soft-delete enabled, can be recovered for 90 days)"
+            else
+              echo "❌ Failed to delete Key Vault: $KEY_VAULT"
+              exit 1
+            fi
           fi
 
       - name: Delete Log Analytics workspace
@@ -314,15 +326,19 @@ jobs:
           echo "🗑️ Step 5/5: Deleting Log Analytics workspace: $LOG_ANALYTICS"
 
           if az monitor log-analytics workspace show --workspace-name "$LOG_ANALYTICS" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
-            retry_azure_operation \
+            if retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
               "Delete Log Analytics workspace $LOG_ANALYTICS" \
               az monitor log-analytics workspace delete \
                 --workspace-name "$LOG_ANALYTICS" \
                 --resource-group "$RESOURCE_GROUP" \
                 --yes \
-                --force true
-            echo "✅ Log Analytics workspace deleted"
+                --force true; then
+              echo "✅ Log Analytics workspace deleted"
+            else
+              echo "❌ Failed to delete Log Analytics workspace: $LOG_ANALYTICS"
+              exit 1
+            fi
           else
             echo "ℹ️  Log Analytics workspace not found: $LOG_ANALYTICS"
           fi
