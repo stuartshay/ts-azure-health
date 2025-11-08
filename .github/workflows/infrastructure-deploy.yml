@@ -160,8 +160,9 @@ jobs:
 
           DEPLOYMENT_NAME="infrastructure-deploy-$(date +%Y%m%d-%H%M%S)"
 
-          # Deploy with retry logic - capture output separately to avoid corrupting JSON
-          deployment_output=$(retry_azure_operation \
+          # Deploy with retry logic
+          echo "🚀 Deploying Bicep template..."
+          retry_azure_operation \
             "$MAX_RETRY_ATTEMPTS" \
             "Deploy Bicep template" \
             az deployment group create \
@@ -169,14 +170,21 @@ jobs:
               --resource-group "$RESOURCE_GROUP" \
               --template-file infrastructure/main.bicep \
               --parameters infrastructure/${{ github.event.inputs.environment }}.bicepparam \
-              --output json)
+              --output none
 
           echo "✅ Deployment completed successfully!"
 
+          # Get deployment outputs separately (after deployment is complete)
+          echo "📤 Retrieving deployment outputs..."
+          deployment_data=$(az deployment group show \
+            --name "$DEPLOYMENT_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --output json)
+
           # Extract outputs from deployment
-          key_vault_name=$(echo "$deployment_output" | jq -r '.properties.outputs.keyVaultName.value')
-          managed_identity_name=$(echo "$deployment_output" | jq -r '.properties.outputs.managedIdentityName.value')
-          managed_env_name=$(echo "$deployment_output" | jq -r '.properties.outputs.managedEnvironmentName.value')
+          key_vault_name=$(echo "$deployment_data" | jq -r '.properties.outputs.keyVaultName.value')
+          managed_identity_name=$(echo "$deployment_data" | jq -r '.properties.outputs.managedIdentityName.value')
+          managed_env_name=$(echo "$deployment_data" | jq -r '.properties.outputs.managedEnvironmentName.value')
 
           # Set outputs for next steps
           {
