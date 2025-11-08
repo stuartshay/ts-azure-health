@@ -142,12 +142,12 @@ jobs:
         if: steps.check_rg.outputs.exists == 'true'
         run: |
           echo "🔍 Identifying resources created by ts-azure-health project..."
-          
+
           # Define resource name patterns based on Bicep template
           MANAGED_ENV="env-tsazurehealth-${{ github.event.inputs.environment }}"
           LOG_ANALYTICS="log-tsazurehealth-${{ github.event.inputs.environment }}"
           UAMI="id-tsazurehealth-${{ github.event.inputs.environment }}"
-          
+
           # Find Key Vault with dynamic prefix (has unique suffix)
           KEY_VAULT=$(az keyvault list \
             --resource-group "$RESOURCE_GROUP" \
@@ -196,9 +196,9 @@ jobs:
         shell: bash
         run: |
           source /tmp/retry-utils.sh
-          
+
           echo "🗑️ Step 1/5: Deleting container apps..."
-          
+
           # Find container apps with project tag
           CONTAINER_APPS=$(az containerapp list \
             --resource-group "$RESOURCE_GROUP" \
@@ -228,11 +228,11 @@ jobs:
         shell: bash
         run: |
           source /tmp/retry-utils.sh
-          
+
           MANAGED_ENV="${{ steps.identify_resources.outputs.managed-env }}"
-          
+
           echo "🗑️ Step 2/5: Deleting Container Apps managed environment: $MANAGED_ENV"
-          
+
           if az containerapp env show --name "$MANAGED_ENV" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
@@ -254,11 +254,11 @@ jobs:
         shell: bash
         run: |
           source /tmp/retry-utils.sh
-          
+
           UAMI="${{ steps.identify_resources.outputs.uami }}"
-          
+
           echo "🗑️ Step 3/5: Deleting managed identity: $UAMI"
-          
+
           if az identity show --name "$UAMI" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
@@ -276,14 +276,14 @@ jobs:
         shell: bash
         run: |
           source /tmp/retry-utils.sh
-          
+
           KEY_VAULT="${{ steps.identify_resources.outputs.key-vault }}"
-          
+
           if [ -z "$KEY_VAULT" ] || [ "$KEY_VAULT" = "null" ]; then
             echo "ℹ️  Step 4/5: Key Vault not found"
           else
             echo "🗑️ Step 4/5: Deleting Key Vault: $KEY_VAULT"
-            
+
             retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
               "Delete Key Vault $KEY_VAULT" \
@@ -298,11 +298,11 @@ jobs:
         shell: bash
         run: |
           source /tmp/retry-utils.sh
-          
+
           LOG_ANALYTICS="${{ steps.identify_resources.outputs.log-analytics }}"
-          
+
           echo "🗑️ Step 5/5: Deleting Log Analytics workspace: $LOG_ANALYTICS"
-          
+
           if az monitor log-analytics workspace show --workspace-name "$LOG_ANALYTICS" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             retry_azure_operation \
               "$MAX_RETRY_ATTEMPTS" \
