@@ -20,15 +20,16 @@ param acrName string = 'azureconnectedservicesacr'
 @description('Azure Container Registry Resource Group name')
 param acrResourceGroup string = 'AzureConnectedServices-RG'
 
+@description('Shared Key Vault name (in rg-azure-health-shared)')
+param sharedKeyVaultName string = 'kv-tsazurehealth'
+
+@description('Shared Key Vault Resource Group name')
+param sharedKeyVaultResourceGroup string = 'rg-azure-health-shared'
+
 @description('Current date for tagging (automatically set)')
 param currentDate string = utcNow('yyyy-MM-dd')
 
 // Generate unique names based on environment
-var uniqueSuffix = uniqueString(resourceGroup().id)
-// Note: Key Vault names are limited to 24 characters and must be globally unique
-// The take() function ensures we don't exceed this limit by truncating if needed
-// Format: kv-{baseName}-{env}-{unique} where unique is 13 chars from uniqueString()
-var keyVaultName = take('kv-${baseName}-${environment}-${uniqueSuffix}', 24)
 var managedEnvName = 'env-${baseName}-${environment}'
 var uamiName = 'id-${baseName}-${environment}'
 
@@ -43,22 +44,10 @@ var commonTags = {
 // Log Analytics workspace name
 var logAnalyticsWorkspaceName = 'log-${baseName}-${environment}'
 
-resource kv 'Microsoft.KeyVault/vaults@2025-05-01' = {
-  name: keyVaultName
-  location: location
-  tags: commonTags
-  properties: {
-    tenantId: subscription().tenantId
-    sku: {
-      family: 'A'
-      name: 'standard'
-    }
-    enableRbacAuthorization: true
-    enabledForDeployment: false
-    enabledForTemplateDeployment: false
-    enabledForDiskEncryption: false
-    publicNetworkAccess: 'Enabled'
-  }
+// Reference existing shared Key Vault in separate resource group
+resource kv 'Microsoft.KeyVault/vaults@2025-05-01' existing = {
+  scope: resourceGroup(sharedKeyVaultResourceGroup)
+  name: sharedKeyVaultName
 }
 
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2024-11-30' = {
@@ -105,24 +94,18 @@ resource acaEnv 'Microsoft.App/managedEnvironments@2025-07-01' = {
   }
 }
 
-// RBAC: grant the UAMI "Key Vault Secrets User" role on the vault
-resource roleDef 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  name: '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
-}
-
-resource kvRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(kv.id, uami.id, roleDef.name)
-  scope: kv
-  properties: {
+// Grant UAMI Key Vault Secrets User role on shared Key Vault
+module kvRoleAssignment 'modules/kvRoleAssignment.bicep' = {
+  name: 'kvRoleAssignment'
+  scope: resourceGroup(sharedKeyVaultResourceGroup)
+  params: {
+    keyVaultName: sharedKeyVaultName
     principalId: uami.properties.principalId
-    roleDefinitionId: roleDef.id
-    principalType: 'ServicePrincipal'
   }
 }
 
 // Outputs
-output keyVaultName string = kv.name
+output keyVaultName string = sharedKeyVaultName
 output keyVaultUrl string = kv.properties.vaultUri
 output managedIdentityName string = uami.name
 output managedIdentityPrincipalId string = uami.properties.principalId

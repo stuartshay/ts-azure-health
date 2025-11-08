@@ -348,49 +348,6 @@ jobs:
             echo "deleted=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Delete Key Vault
-        id: delete_keyvault
-        if: steps.check_rg.outputs.exists == 'true'
-        shell: bash
-        run: |
-          source /tmp/retry-utils.sh
-
-          KEY_VAULT="${{ steps.identify_resources.outputs.key_vault }}"
-
-          if [ -z "$KEY_VAULT" ] || [ "$KEY_VAULT" = "null" ]; then
-            echo "ℹ️  Step 4/5: Key Vault not found"
-            echo "deleted=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "🗑️ Step 4/5: Deleting Key Vault: $KEY_VAULT"
-
-            if retry_azure_operation \
-              "$MAX_RETRY_ATTEMPTS" \
-              "Delete Key Vault $KEY_VAULT" \
-              az keyvault delete \
-                --name "$KEY_VAULT" \
-                --resource-group "$RESOURCE_GROUP"; then
-              echo "✅ Key Vault deleted (soft-deleted, recoverable for 90 days)"
-              
-              # Purge the Key Vault to avoid conflicts on next deployment
-              echo "🗑️ Purging soft-deleted Key Vault to enable recreation..."
-              if retry_azure_operation \
-                "$MAX_RETRY_ATTEMPTS" \
-                "Purge Key Vault $KEY_VAULT" \
-                az keyvault purge \
-                  --name "$KEY_VAULT" \
-                  --location "$LOCATION"; then
-                echo "✅ Key Vault purged permanently"
-              else
-                echo "⚠️  Warning: Failed to purge Key Vault. You may need to purge manually before next deployment."
-              fi
-              
-              echo "deleted=true" >> "$GITHUB_OUTPUT"
-            else
-              echo "❌ Failed to delete Key Vault: $KEY_VAULT"
-              exit 1
-            fi
-          fi
-
       - name: Delete Log Analytics workspace
         id: delete_logs
         if: steps.check_rg.outputs.exists == 'true'
@@ -400,7 +357,7 @@ jobs:
 
           LOG_ANALYTICS="${{ steps.identify_resources.outputs.log_analytics }}"
 
-          echo "🗑️ Step 5/5: Deleting Log Analytics workspace: $LOG_ANALYTICS"
+          echo "🗑️ Step 4/4: Deleting Log Analytics workspace: $LOG_ANALYTICS"
 
           if az monitor log-analytics workspace show --workspace-name "$LOG_ANALYTICS" --resource-group "$RESOURCE_GROUP" &> /dev/null; then
             if retry_azure_operation \
@@ -461,14 +418,6 @@ jobs:
             NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Managed Identity: \`${{ steps.identify_resources.outputs.uami }}\` (not found)\n"
           fi
 
-          # Key Vault
-          if [ "${{ steps.delete_keyvault.outputs.deleted }}" = "true" ]; then
-            DELETED_LIST="${DELETED_LIST}- ✅ Key Vault: \`${{ steps.identify_resources.outputs.key_vault }}\` (soft-deleted, recoverable for 90 days)\n"
-            DELETED_COUNT=$((DELETED_COUNT + 1))
-          else
-            NOT_FOUND_LIST="${NOT_FOUND_LIST}- ⏭️  Key Vault (not found)\n"
-          fi
-
           # Log Analytics
           if [ "${{ steps.delete_logs.outputs.deleted }}" = "true" ]; then
             DELETED_LIST="${DELETED_LIST}- ✅ Log Analytics Workspace: \`${{ steps.identify_resources.outputs.log_analytics }}\`\n"
@@ -498,7 +447,9 @@ jobs:
               echo "**Resources Not Found:**"
               echo -e "$NOT_FOUND_LIST"
             fi
+            echo ""
             echo "> **Note:** Other project resources (e.g., from pwsh-azure-health) remain intact."
+            echo "> **Note:** Shared Key Vault \`kv-tsazurehealth\` in \`rg-azure-health-shared\` is preserved."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Skip deletion

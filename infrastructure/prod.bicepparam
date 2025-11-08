@@ -8,3 +8,7 @@ param baseName = 'tsazurehealth'
 param acrName = 'azureconnectedservicesacr'
 // Resource group where the Azure Container Registry (ACR) is located
 param acrResourceGroup = 'AzureConnectedServices-RG'
+// Shared Key Vault name (in rg-azure-health-shared)
+param sharedKeyVaultName = 'kv-tsazurehealth'
+// Shared Key Vault Resource Group name
+param sharedKeyVaultResourceGroup = 'rg-azure-health-shared'
