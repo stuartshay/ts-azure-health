@@ -1,6 +1,6 @@
 <!--
   ============================================================================
-  SYNC IMPACT REPORT - Constitution Update to v1.0.1
+  SYNC IMPACT REPORT - Constitution Update to v1.1.0
   ============================================================================
 
   VERSION CHANGE: 1.0.0 → 1.1.0 (Pre-commit Hook Enforcement)
