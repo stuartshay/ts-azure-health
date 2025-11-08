@@ -176,15 +176,33 @@ jobs:
 
           # Get deployment outputs separately (after deployment is complete)
           echo "📤 Retrieving deployment outputs..."
-          deployment_data=$(az deployment group show \
+          if ! deployment_data=$(az deployment group show \
             --name "$DEPLOYMENT_NAME" \
             --resource-group "$RESOURCE_GROUP" \
-            --output json)
+            --output json 2>&1); then
+            echo "❌ Error: Failed to retrieve deployment outputs for $DEPLOYMENT_NAME"
+            echo "$deployment_data"
+            exit 1
+          fi
 
           # Extract outputs from deployment
           key_vault_name=$(echo "$deployment_data" | jq -r '.properties.outputs.keyVaultName.value')
           managed_identity_name=$(echo "$deployment_data" | jq -r '.properties.outputs.managedIdentityName.value')
           managed_env_name=$(echo "$deployment_data" | jq -r '.properties.outputs.managedEnvironmentName.value')
+
+          # Validate deployment outputs
+          if [ "$key_vault_name" = "null" ] || [ -z "$key_vault_name" ]; then
+            echo "❌ Error: Failed to retrieve keyVaultName from deployment outputs"
+            exit 1
+          fi
+          if [ "$managed_identity_name" = "null" ] || [ -z "$managed_identity_name" ]; then
+            echo "❌ Error: Failed to retrieve managedIdentityName from deployment outputs"
+            exit 1
+          fi
+          if [ "$managed_env_name" = "null" ] || [ -z "$managed_env_name" ]; then
+            echo "❌ Error: Failed to retrieve managedEnvironmentName from deployment outputs"
+            exit 1
+          fi
 
           # Set outputs for next steps
           {

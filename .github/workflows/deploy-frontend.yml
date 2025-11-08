@@ -173,16 +173,24 @@ jobs:
         id: infra-info
         run: |
           # Get managed identity ID
-          UAMI_ID=$(az identity show \
+          if ! UAMI_ID=$(az identity show \
             --name ${{ steps.env-vars.outputs.uami-name }} \
             --resource-group ${{ steps.env-vars.outputs.resource-group }} \
-            --query id -o tsv)
+            --query id -o tsv 2>/dev/null); then
+            echo "❌ Error: Managed identity '${{ steps.env-vars.outputs.uami-name }}' not found in resource group '${{ steps.env-vars.outputs.resource-group }}'. Please ensure infrastructure is deployed first."
+            exit 1
+          fi
           echo "uami-id=$UAMI_ID" >> $GITHUB_OUTPUT
 
           # Get Key Vault URL (find by tags/prefix since it has unique suffix)
           KV_NAME=$(az keyvault list \
             --resource-group ${{ steps.env-vars.outputs.resource-group }} \
             --query "[?starts_with(name, 'kv-tsazurehealth-${{ github.event.inputs.environment }}')].name | [0]" -o tsv)
+          
+          if [ -z "$KV_NAME" ] || [ "$KV_NAME" = "null" ]; then
+            echo "❌ Error: No Key Vault found matching prefix 'kv-tsazurehealth-${{ github.event.inputs.environment }}' in resource group '${{ steps.env-vars.outputs.resource-group }}'"
+            exit 1
+          fi
           
           KV_URL=$(az keyvault show \
             --name "$KV_NAME" \
@@ -192,16 +200,17 @@ jobs:
           echo "kv-name=$KV_NAME" >> $GITHUB_OUTPUT
 
           # Get Container Apps Environment ID
-          ENV_ID=$(az containerapp env show \
+          if ! ENV_ID=$(az containerapp env show \
             --name ${{ steps.env-vars.outputs.managed-env }} \
             --resource-group ${{ steps.env-vars.outputs.resource-group }} \
-            --query id -o tsv)
-          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT
-
-      - name: Create or update Container App
+            --query id -o tsv 2>/dev/null); then
+            echo "❌ Error: Container Apps environment '${{ steps.env-vars.outputs.managed-env }}' not found. Please ensure infrastructure is deployed first."
+            exit 1
+          fi
+          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT      - name: Create or update Container App
         run: |
           echo "🚀 Deploying container app..."
-          
+
           # Check if container app exists
           if az containerapp show \
             --name ${{ steps.env-vars.outputs.container-app }} \
@@ -212,6 +221,10 @@ jobs:
               --name ${{ steps.env-vars.outputs.container-app }} \
               --resource-group ${{ steps.env-vars.outputs.resource-group }} \
               --image ${{ needs.build-and-push.outputs.full-image }} \
+              --cpu 0.5 \
+              --memory 1Gi \
+              --min-replicas 1 \
+              --max-replicas 1 \
               --set-env-vars KV_URL=${{ steps.infra-info.outputs.kv-url }}
           else
             echo "🆕 Creating new container app..."
