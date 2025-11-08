@@ -251,15 +251,15 @@ jobs:
                   break
                 fi              echo "  Poll attempt $attempt/$MAX_POLL_ATTEMPTS: $(echo "$REMAINING_APPS" | wc -w) app(s) still deleting..."
               
-              if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
-                echo "❌ Timeout waiting for container apps to delete. Remaining apps:"
-                echo "$REMAINING_APPS"
-                exit 1
-              fi
+            if [ $attempt -eq $MAX_POLL_ATTEMPTS ]; then
+              echo "❌ Timeout waiting for container apps to delete. Remaining apps:"
+              echo "$REMAINING_APPS"
+              exit 1
+            fi
 
-              sleep $POLL_INTERVAL
-              attempt=$((attempt + 1))
-            done
+            sleep $POLL_INTERVAL
+            attempt=$((attempt + 1))
+          done
           fi
 
       - name: Delete managed environment
