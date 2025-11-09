@@ -6,7 +6,6 @@
 
 [![Playwright Tests](https://github.com/stuartshay/ts-azure-health/actions/workflows/playwright.yml/badge.svg)](https://github.com/stuartshay/ts-azure-health/actions/workflows/playwright.yml)
 
-
 Minimal, production-friendly skeleton to:
 
 - Sign-in with Entra ID (MSAL PKCE).
