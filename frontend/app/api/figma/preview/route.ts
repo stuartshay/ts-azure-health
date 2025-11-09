@@ -23,7 +23,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { fetchImages } from "@/lib/figmaService";
+import { fetchImage } from "@/lib/figmaService";
 
 // Cache-Control header for client-side caching (24 hours)
 // Figma image URLs are stable for ~30 days
@@ -79,13 +79,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch image URL from Figma API (with caching)
-    const images = await fetchImages([nodeId], {
+    const imageUrl = await fetchImage(nodeId, {
       fileKey,
       format,
       scale,
     });
-
-    const imageUrl = images[nodeId];
 
     if (!imageUrl) {
       return NextResponse.json(

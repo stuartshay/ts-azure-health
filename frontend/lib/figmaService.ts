@@ -301,6 +301,26 @@ export async function fetchImages(
 }
 
 /**
+ * Fetch image URL for a single node with caching (convenience wrapper)
+ *
+ * @param nodeId - Single node ID to export
+ * @param options - Export options (fileKey, format, scale, etc.)
+ * @returns Promise resolving to the image URL (or null if not found)
+ * @throws Error if required parameters are missing or API call fails
+ */
+export async function fetchImage(
+  nodeId: string,
+  options?: {
+    fileKey?: string;
+    format?: "png" | "svg" | "jpg";
+    scale?: number;
+  }
+): Promise<string | null> {
+  const images = await fetchImages([nodeId], options);
+  return images[nodeId] ?? null;
+}
+
+/**
  * Clear all cached Figma data
  *
  * Useful for testing or when you need fresh data from the API
