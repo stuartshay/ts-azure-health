@@ -16,22 +16,28 @@
 // Note: This script should be run from frontend/ directory to access node_modules
 // The npm script "test:figma" handles this automatically
 
-import * as path from 'path';
-import * as fs from 'fs';
+import * as path from "path";
+import * as fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// ES module compatibility: Get __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ============================================================================
 // Color helpers for terminal output
 // ============================================================================
 
 const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  dim: '\x1b[2m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  cyan: '\x1b[36m',
+  reset: "\x1b[0m",
+  bright: "\x1b[1m",
+  dim: "\x1b[2m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  cyan: "\x1b[36m",
 };
 
 function success(msg: string) {
@@ -64,21 +70,21 @@ function section(msg: string) {
  */
 function loadEnvironment() {
   const possibleEnvPaths = [
-    path.resolve(process.cwd(), '.env'), // Current directory
-    path.resolve(process.cwd(), '..', '.env'), // Parent directory (if in frontend/)
-    path.resolve(__dirname, '..', '.env'), // Repo root from script location
+    path.resolve(process.cwd(), ".env"), // Current directory (frontend/)
+    path.resolve(process.cwd(), "..", ".env"), // Parent directory (repo root)
+    path.resolve(__dirname, "..", "..", ".env"), // Repo root from script location
   ];
 
   let loaded = false;
   for (const envPath of possibleEnvPaths) {
     if (fs.existsSync(envPath)) {
       try {
-        const envContent = fs.readFileSync(envPath, 'utf-8');
-        const lines = envContent.split('\n');
+        const envContent = fs.readFileSync(envPath, "utf-8");
+        const lines = envContent.split("\n");
 
         for (const line of lines) {
           const trimmed = line.trim();
-          if (trimmed && !trimmed.startsWith('#')) {
+          if (trimmed && !trimmed.startsWith("#")) {
             const match = trimmed.match(/^([^=]+)=(.*)$/);
             if (match) {
               const key = match[1].trim();
@@ -101,7 +107,7 @@ function loadEnvironment() {
   }
 
   if (!loaded) {
-    warning('No .env file found. Relying on system environment variables.');
+    warning("No .env file found. Relying on system environment variables.");
   }
 }
 
@@ -115,15 +121,14 @@ function loadEnvironment() {
  */
 async function getFigmaApi() {
   try {
-    // Try to load from frontend/node_modules
-    const frontendModulePath = path.resolve(__dirname, '../frontend/node_modules/figma-api');
-    const module = require(frontendModulePath);
-    return module.Api;
+    // Use dynamic import instead of require for ES modules
+    const { Api } = await import("figma-api");
+    return Api;
   } catch (importError: any) {
-    error('Failed to import figma-api package');
-    console.log('\n' + colors.dim + 'To fix this:' + colors.reset);
-    console.log('  1. Ensure figma-api is installed: cd frontend && npm install');
-    console.log('  2. Run from frontend: cd frontend && npm run test:figma');
+    error("Failed to import figma-api package");
+    console.log("\n" + colors.dim + "To fix this:" + colors.reset);
+    console.log("  1. Ensure figma-api is installed: cd frontend && npm install");
+    console.log("  2. Run from frontend: cd frontend && npm run test:figma");
     console.log(`  3. Error: ${importError.message}\n`);
     process.exit(1);
   }
@@ -133,24 +138,24 @@ async function getFigmaApi() {
  * Validate that required environment variables are set
  */
 function validateEnvironment(): { token: string; fileKey?: string } {
-  section('🔍 Environment Validation');
+  section("🔍 Environment Validation");
 
   const token = process.env.FIGMA_API_TOKEN || process.env.FIGMA_API_KEY;
   const fileKey = process.env.FIGMA_FILE_KEY;
 
   if (!token) {
-    error('FIGMA_API_TOKEN not found in environment');
-    console.log('\n' + colors.dim + 'To fix this:' + colors.reset);
-    console.log('  1. Generate a token at: https://www.figma.com/developers/api#access-tokens');
-    console.log('  2. Add to .env file: FIGMA_API_TOKEN=figd_xxxxx');
-    console.log('  3. Ensure required scopes: current_user:read, file_content:read\n');
+    error("FIGMA_API_TOKEN not found in environment");
+    console.log("\n" + colors.dim + "To fix this:" + colors.reset);
+    console.log("  1. Generate a token at: https://www.figma.com/developers/api#access-tokens");
+    console.log("  2. Add to .env file: FIGMA_API_TOKEN=figd_xxxxx");
+    console.log("  3. Ensure required scopes: current_user:read, file_content:read\n");
     process.exit(1);
   }
 
-  success('FIGMA_API_TOKEN found');
+  success("FIGMA_API_TOKEN found");
 
   // Validate token format
-  if (!token.startsWith('figd_')) {
+  if (!token.startsWith("figd_")) {
     warning("Token does not start with 'figd_' - may not be a valid Personal Access Token");
   } else {
     success("Token format looks valid (starts with 'figd_')");
@@ -159,7 +164,7 @@ function validateEnvironment(): { token: string; fileKey?: string } {
   if (fileKey) {
     success(`FIGMA_FILE_KEY found: ${fileKey}`);
   } else {
-    info('FIGMA_FILE_KEY not set (optional)');
+    info("FIGMA_FILE_KEY not set (optional)");
   }
 
   return { token, fileKey };
@@ -169,18 +174,18 @@ function validateEnvironment(): { token: string; fileKey?: string } {
  * Test basic API connectivity by calling getUserMe()
  */
 async function testUserInfo(api: any): Promise<void> {
-  section('👤 Testing User Info (getUserMe)');
+  section("👤 Testing User Info (getUserMe)");
 
   try {
     const response = await api.getUserMe();
-    success('Successfully connected to Figma API');
+    success("Successfully connected to Figma API");
     console.log(`   User: ${colors.bright}${response.handle || response.email}${colors.reset}`);
     console.log(`   ID: ${response.id}`);
     if (response.email) {
       console.log(`   Email: ${response.email}`);
     }
   } catch (err: any) {
-    error('Failed to fetch user info');
+    error("Failed to fetch user info");
     console.error(`   ${err.message}`);
     throw err;
   }
@@ -194,7 +199,7 @@ async function testFileAccess(api: any, fileKey: string): Promise<void> {
 
   try {
     const response = await api.getFile({ file_key: fileKey });
-    success('Successfully fetched file');
+    success("Successfully fetched file");
     console.log(`   Name: ${colors.bright}${response.name}${colors.reset}`);
     console.log(`   Last Modified: ${response.lastModified}`);
     console.log(`   Version: ${response.version}`);
@@ -211,29 +216,29 @@ async function testFileAccess(api: any, fileKey: string): Promise<void> {
       console.log(`   Components: ${componentCount}`);
     }
   } catch (err: any) {
-    error('Failed to fetch file');
+    error("Failed to fetch file");
     console.error(`   ${err.message}`);
 
-    if (err.message.includes('404')) {
+    if (err.message.includes("404")) {
       console.log(
-        '\n' +
+        "\n" +
           colors.dim +
-          'Troubleshooting:' +
+          "Troubleshooting:" +
           colors.reset +
-          '\n' +
-          '  • Verify the file key is correct\n' +
-          '  • Ensure you have access to the file\n' +
+          "\n" +
+          "  • Verify the file key is correct\n" +
+          "  • Ensure you have access to the file\n" +
           "  • Check that the file hasn't been deleted\n"
       );
-    } else if (err.message.includes('403')) {
+    } else if (err.message.includes("403")) {
       console.log(
-        '\n' +
+        "\n" +
           colors.dim +
-          'Troubleshooting:' +
+          "Troubleshooting:" +
           colors.reset +
-          '\n' +
+          "\n" +
           "  • Verify your token has 'file_content:read' scope\n" +
-          '  • Ensure you have permission to access this file\n'
+          "  • Ensure you have permission to access this file\n"
       );
     }
 
@@ -245,7 +250,7 @@ async function testFileAccess(api: any, fileKey: string): Promise<void> {
  * Display rate limit information and free-tier guidance
  */
 function displayRateLimitInfo(): void {
-  section('📊 Rate Limit Information');
+  section("📊 Rate Limit Information");
 
   console.log(
     `${colors.dim}Figma Free Tier Limits:${colors.reset}\n` +
@@ -267,7 +272,7 @@ function displayRateLimitInfo(): void {
  * Display cache statistics (if service is imported)
  */
 function displayCacheInfo(): void {
-  section('💾 Cache Configuration');
+  section("💾 Cache Configuration");
 
   console.log(
     `  Max Size: 50 items\n` +
@@ -276,7 +281,7 @@ function displayCacheInfo(): void {
       `  Scope: In-memory (single process)\n`
   );
 
-  info('Cache stats are available via getCacheStats() in figmaService.ts during runtime');
+  info("Cache stats are available via getCacheStats() in figmaService.ts during runtime");
 }
 
 // ============================================================================
@@ -315,8 +320,8 @@ async function main() {
       await testFileAccess(api, fileKey);
     } else {
       info(
-        '\nSkipping file access test (FIGMA_FILE_KEY not set)\n' +
-          'To test file access, add FIGMA_FILE_KEY to your .env file'
+        "\nSkipping file access test (FIGMA_FILE_KEY not set)\n" +
+          "To test file access, add FIGMA_FILE_KEY to your .env file"
       );
     }
 
@@ -328,7 +333,7 @@ async function main() {
     console.log(
       `\n${colors.green}${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`
     );
-    success('All tests passed! Figma integration is ready to use.');
+    success("All tests passed! Figma integration is ready to use.");
     console.log(
       `${colors.green}${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}\n`
     );
@@ -338,7 +343,7 @@ async function main() {
     console.log(
       `\n${colors.red}${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`
     );
-    error('Test failed');
+    error("Test failed");
     console.log(
       `${colors.red}${colors.bright}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}\n`
     );
