@@ -33,7 +33,7 @@
   - Updated LAST_AMENDED_DATE to 2025-11-07 (current date)
   - Confirmed all principles remain relevant to current project phase
   - Verified technology standards match current stack:
-    * Node.js 22 LTS ✓
+    * Node.js 24 LTS ✓
     * Next.js 16 ✓ (updated from 15)
     * TypeScript 5.6+ ✓
     * React 19 ✓ (updated from 18)
@@ -141,7 +141,7 @@ Development environments must be reproducible via Dev Containers. Code quality i
 
 **Mandatory Stack**:
 
-- Runtime: Node.js 22 LTS
+- Runtime: Node.js 24 LTS
 - Framework: Next.js 16 with App Router
 - Language: TypeScript 5.6+ with strict mode
 - UI Library: React 19

@@ -8,7 +8,7 @@ The devcontainer includes:
 
 ### Tools
 
-- **Node.js 22 (LTS)**: JavaScript/TypeScript runtime
+- **Node.js 24 (LTS)**: JavaScript/TypeScript runtime
 - **Azure CLI**: For Azure resource management
 - **GitHub CLI**: For GitHub operations
 - **Docker-in-Docker**: Build and run containers within the devcontainer

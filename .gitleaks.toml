@@ -1,0 +1,55 @@
+# Gitleaks configuration for ts-azure-health
+# https://github.com/gitleaks/gitleaks
+
+title = "ts-azure-health gitleaks config"
+
+# Extend default gitleaks config
+[extend]
+useDefault = true
+
+# Custom allowlist for false positives
+[allowlist]
+description = "Allowlisted files and patterns"
+
+# Allowlist specific paths
+paths = [
+  '''^\.git/''',
+  '''^node_modules/''',
+  '''^\.devcontainer/''',
+  '''^\.next/''',  # Next.js build artifacts with generated keys
+  '''package-lock\.json$''',
+  '''\.md$''',  # Documentation files often contain example keys
+  '''\.env\.example$''',  # Example env files
+  '''\.env\.template$''',  # Template env files
+]
+
+# Allowlist specific commits (if needed)
+# commits = ["commit-hash-here"]
+
+# Allowlist specific strings/patterns that are false positives
+regexes = [
+  '''example-key-[a-zA-Z0-9]+''',  # Example keys in documentation
+  '''your-[a-zA-Z0-9-]+''',        # Placeholder values
+  '''<[a-zA-Z0-9-]+>''',           # Template placeholders like <your-client-id>
+  '''PLACEHOLDER''',               # Explicit placeholders
+  '''xxxxxxxx''',                  # Masked values
+]
+
+# Custom rules (optional - add project-specific patterns)
+[[rules]]
+id = "azure-client-secret-placeholder"
+description = "Ignore Azure placeholder secrets in documentation"
+regex = '''AAD_BFF_CLIENT_SECRET=<your-bff-client-secret>'''
+tags = ["allowlist"]
+
+[[rules]]
+id = "figma-token-placeholder"
+description = "Ignore Figma placeholder tokens in documentation"
+regex = '''FIGMA_API_TOKEN=figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx'''
+tags = ["allowlist"]
+
+[[rules]]
+id = "example-env-files"
+description = "Ignore example environment files with placeholders"
+path = '''\.env\.example$'''
+tags = ["allowlist"]

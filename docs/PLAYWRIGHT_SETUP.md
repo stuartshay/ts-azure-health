@@ -26,6 +26,7 @@ npx playwright install --with-deps
 ```
 
 This installs:
+
 - `@playwright/test` - The test runner and assertions library
 - Browser binaries (Chromium, Firefox, WebKit)
 - System dependencies required by the browsers
@@ -52,17 +53,20 @@ The project uses a comprehensive Playwright configuration in `playwright.config.
 
 **Parallel Execution**: Tests run in parallel for faster execution
 
-**Retries**: 
+**Retries**:
+
 - CI: 2 retries on failure
 - Local: 0 retries (fail fast for debugging)
 
 **Workers**:
+
 - CI: 1 worker (serial execution for stability)
 - Local: All available CPU cores
 
 **Base URL**: `http://localhost:3000` (configurable via `PLAYWRIGHT_BASE_URL`)
 
 **Artifacts**:
+
 - Screenshots: On failure only
 - Videos: On retry/failure
 - Traces: On first retry (for debugging)
@@ -72,6 +76,7 @@ The project uses a comprehensive Playwright configuration in `playwright.config.
 The configuration includes multiple projects for comprehensive testing:
 
 1. **Desktop Browsers**:
+
    - Chromium (Chrome/Edge)
    - Firefox
    - WebKit (Safari)
@@ -144,6 +149,7 @@ npx playwright test tests/example.spec.ts --debug
 ```
 
 **Debugging Features**:
+
 - Step through each action
 - Pick locators interactively
 - See actionability logs
@@ -158,6 +164,7 @@ npm run test:e2e:ui
 ```
 
 **Features**:
+
 - Run/debug tests visually
 - Time travel through test execution
 - Inspect DOM snapshots
@@ -174,10 +181,10 @@ import { test, expect } from '@playwright/test';
 test('describe what the test does', async ({ page }) => {
   // Navigate to page
   await page.goto('/');
-  
+
   // Interact with elements
   await page.click('button');
-  
+
   // Assert expectations
   await expect(page).toHaveTitle(/Expected Title/);
 });
@@ -280,10 +287,10 @@ await expect(page.getByRole('listitem')).toHaveCount(5);
 ```typescript
 test('API endpoint returns correct data', async ({ request }) => {
   const response = await request.get('/api/data');
-  
+
   expect(response.ok()).toBeTruthy();
   expect(response.status()).toBe(200);
-  
+
   const data = await response.json();
   expect(data).toHaveProperty('id');
   expect(data.name).toBe('Expected Name');
@@ -303,10 +310,10 @@ setup('authenticate', async ({ page }) => {
   await page.fill('[name="email"]', 'user@example.com');
   await page.fill('[name="password"]', 'password');
   await page.click('button[type="submit"]');
-  
+
   // Save authenticated state
-  await page.context().storageState({ 
-    path: 'playwright/.auth/user.json' 
+  await page.context().storageState({
+    path: 'playwright/.auth/user.json',
   });
 });
 
@@ -315,13 +322,13 @@ projects: [
   { name: 'setup', testMatch: /.*\.setup\.ts/ },
   {
     name: 'chromium',
-    use: { 
+    use: {
       ...devices['Desktop Chrome'],
       storageState: 'playwright/.auth/user.json',
     },
     dependencies: ['setup'],
   },
-]
+];
 ```
 
 ### Visual Regression Testing
@@ -329,10 +336,10 @@ projects: [
 ```typescript
 test('visual regression', async ({ page }) => {
   await page.goto('/');
-  
+
   // Take screenshot
   await expect(page).toHaveScreenshot('homepage.png');
-  
+
   // Compare specific element
   const header = page.getByRole('banner');
   await expect(header).toHaveScreenshot('header.png');
@@ -344,12 +351,14 @@ test('visual regression', async ({ page }) => {
 ### 1. Use User-Facing Locators
 
 ❌ **Avoid**:
+
 ```typescript
 await page.click('#submit-btn');
 await page.click('.btn-primary');
 ```
 
 ✅ **Prefer**:
+
 ```typescript
 await page.getByRole('button', { name: 'Submit' }).click();
 await page.getByLabel('Email').fill('user@example.com');
@@ -358,11 +367,13 @@ await page.getByLabel('Email').fill('user@example.com');
 ### 2. Wait for Elements Properly
 
 ❌ **Avoid arbitrary timeouts**:
+
 ```typescript
 await page.waitForTimeout(5000);
 ```
 
 ✅ **Use auto-waiting**:
+
 ```typescript
 // Playwright auto-waits for most actions
 await page.click('button'); // Waits for button to be visible and enabled
@@ -470,7 +481,7 @@ test.describe('Sequential tests', () => {
 ```typescript
 test('handles API errors gracefully', async ({ page }) => {
   // Mock API failure
-  await page.route('/api/data', route => {
+  await page.route('/api/data', (route) => {
     route.fulfill({
       status: 500,
       body: JSON.stringify({ error: 'Internal Server Error' }),
@@ -489,7 +500,7 @@ test.use({ ...devices['iPhone 12'] });
 
 test('mobile navigation works', async ({ page }) => {
   await page.goto('/');
-  
+
   // Mobile-specific interactions
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('navigation')).toBeVisible();
@@ -516,28 +527,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-      
+
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
-      
+
       - name: Install Playwright Browsers
         working-directory: ./frontend
         run: npx playwright install --with-deps
-      
+
       - name: Run Playwright tests
         working-directory: ./frontend
         run: npm run test:e2e
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
-      
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -566,11 +577,13 @@ AZURE_CLIENT_SECRET=your-client-secret
 ### Tests Fail on CI but Pass Locally
 
 **Common causes**:
+
 1. Timing issues - CI is slower
 2. Different screen sizes
 3. Missing environment variables
 
 **Solutions**:
+
 ```typescript
 // Increase timeout for CI
 test.setTimeout(process.env.CI ? 60000 : 30000);
@@ -630,15 +643,18 @@ npx playwright show-trace trace.zip
 ## Additional Resources
 
 ### Official Documentation
+
 - [Playwright Documentation](https://playwright.dev/)
 - [Best Practices](https://playwright.dev/docs/best-practices)
 - [API Reference](https://playwright.dev/docs/api/class-playwright)
 
 ### Next.js Specific
+
 - [Testing Next.js with Playwright](https://nextjs.org/docs/testing#playwright)
 - [Next.js Examples](https://github.com/vercel/next.js/tree/canary/examples/with-playwright)
 
 ### Community
+
 - [Playwright Discord](https://aka.ms/playwright/discord)
 - [GitHub Discussions](https://github.com/microsoft/playwright/discussions)
 - [Stack Overflow](https://stackoverflow.com/questions/tagged/playwright)
