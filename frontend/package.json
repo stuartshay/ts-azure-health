@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "type-check": "tsc --noEmit",
+    "test:figma": "tsx ../scripts/testFigma.ts",
     "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "@azure/keyvault-secrets": "^4.9.0",
     "@azure/msal-browser": "^4.26.1",
     "@azure/msal-node": "^3.8.1",
+    "figma-api": "^2.1.0-beta",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -34,11 +36,11 @@
     "husky": "^9.1.6",
     "lint-staged": "^16.0.0",
     "prettier": "^3.3.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.6.3"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "next lint --fix",
       "prettier --write"
     ],
     "*.{json,md}": [

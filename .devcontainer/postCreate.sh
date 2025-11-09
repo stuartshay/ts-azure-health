@@ -7,6 +7,10 @@ echo "🚀 Running post-create setup..."
 echo "📦 Installing frontend dependencies..."
 cd frontend && npm ci
 
+# Install tsx globally for running TypeScript scripts
+echo "🚀 Installing tsx globally..."
+npm install -g tsx
+
 # Install spec-kit CLI via uv
 echo "🔧 Installing spec-kit CLI..."
 uv tool install specify-cli

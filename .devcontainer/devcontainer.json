@@ -75,6 +75,9 @@
         "dsznajder.es7-react-js-snippets",
         "burkeholland.simple-react-snippets",
 
+        // Figma integration
+        "figma.figma-vscode-extension",
+
         // Azure development
         "ms-azuretools.vscode-azureappservice",
         "ms-azuretools.vscode-azurefunctions",
