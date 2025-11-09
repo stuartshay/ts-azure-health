@@ -30,6 +30,14 @@ repos:
         name: Fix mixed line endings
         args: ['--fix=lf']
 
+  # Gitleaks - Secret scanning
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: Gitleaks - Detect hardcoded secrets
+        description: Scan for secrets, API keys, and credentials
+
   # TypeScript type checking (ESLint is handled by frontend husky hooks)
   - repo: local
     hooks:
