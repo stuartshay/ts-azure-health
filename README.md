@@ -33,7 +33,7 @@ If you prefer to set up manually, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPME
 
 ## Prerequisites
 
-- Node.js 22 (LTS)
+- Node.js 24 (LTS)
 - Azure subscription
 - Azure CLI (for deployment)
 - Two Azure AD App Registrations:
@@ -42,7 +42,7 @@ If you prefer to set up manually, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPME
 
 ## Quick start (local)
 
-1. Install Node 22 (LTS) and dependencies:
+1. Install Node 24 (LTS) and dependencies:
 
    ```bash
    cd frontend/
@@ -603,7 +603,7 @@ See [infrastructure/README.md](infrastructure/README.md) and [scripts/infrastruc
 - **Development Tools**:
   - `tsx` for TypeScript script execution
   - Pre-commit hooks with hadolint, prettier, ESLint
-- **Runtime**: Node.js 22
+- **Runtime**: Node.js 24
 - **Deployment**: Azure Container Apps
 
 ## Code Quality & Development Tools
