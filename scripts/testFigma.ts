@@ -193,7 +193,7 @@ async function testFileAccess(api: any, fileKey: string): Promise<void> {
   section(`📄 Testing File Access (${fileKey})`);
 
   try {
-    const response = await api.getFile(fileKey);
+    const response = await api.getFile({ file_key: fileKey });
     success('Successfully fetched file');
     console.log(`   Name: ${colors.bright}${response.name}${colors.reset}`);
     console.log(`   Last Modified: ${response.lastModified}`);
