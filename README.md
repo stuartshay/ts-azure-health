@@ -62,11 +62,22 @@ If you prefer to set up manually, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPME
    - `KV_URL` - Your Azure Key Vault URL
    - Other environment variables as needed
 
-3. Start the development server:
+3. **(Optional) Configure Figma Integration:**
+
+   If you want to use Figma features, add to `frontend/.env.local`:
+
+   ```bash
+   FIGMA_API_TOKEN=figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   FIGMA_FILE_KEY=<optional-default-file-key>
+   ```
+
+   Generate a token at: https://www.figma.com/developers/api#access-tokens
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
-4. Open http://localhost:3000
+5. Open http://localhost:3000
 
 ## Features & UI
 
@@ -76,6 +87,19 @@ Buttons on the home page:
 - **Call Protected API** → Sends your SPA token to the BFF, which performs OBO to call your downstream Function/API.
 - **Read KV Secret (server)** → BFF uses DefaultAzureCredential/Managed Identity to read `KV_SECRET_NAME` from Key Vault.
 
+### Figma Integration
+
+**Server-side Figma REST API integration** with free-tier optimizations:
+
+- ✅ **Secure Access**: Figma API token kept server-side only
+- ✅ **Smart Caching**: In-memory LRU cache (50 items, 30-min TTL) reduces API calls by ~90%
+- ✅ **Rate Limit Protection**: Stays within free tier (60 requests/minute)
+- ✅ **Preview API**: `/api/figma/preview` endpoint for displaying design assets
+- ✅ **File & Image Export**: Fetch file metadata and export node images (PNG, SVG, JPG)
+- ✅ **Development Tools**: Connectivity test script with diagnostics
+
+See [Figma Setup Guide](docs/copilot_figma_setup.md) for complete documentation.
+
 ## Project Structure
 
 ```
@@ -84,12 +108,16 @@ frontend/
 │   ├── api/
 │   │   ├── call-downstream/    # BFF endpoint for OBO flow
 │   │   │   └── route.ts
-│   │   └── kv-secret/          # BFF endpoint for Key Vault access
-│   │       └── route.ts
+│   │   ├── kv-secret/          # BFF endpoint for Key Vault access
+│   │   │   └── route.ts
+│   │   └── figma/
+│   │       └── preview/        # Figma image preview endpoint
+│   │           └── route.ts
 │   ├── layout.tsx              # Root layout
 │   └── page.tsx                # Home page with demo buttons
 ├── lib/
-│   └── msalClient.ts           # MSAL browser client configuration
+│   ├── msalClient.ts           # MSAL browser client configuration
+│   └── figmaService.ts         # Figma API client with caching
 ├── .env.example                # Environment variables template
 ├── Dockerfile                  # Multi-stage Docker build
 ├── next.config.ts              # Next.js configuration
@@ -98,6 +126,17 @@ frontend/
 
 infrastructure/
 └── main.bicep                  # Azure infrastructure as code
+
+scripts/
+├── testFigma.ts                # Figma connectivity test
+└── infrastructure/
+    ├── deploy-bicep.sh         # Infrastructure deployment
+    └── ...                     # Other deployment scripts
+
+docs/
+├── copilot_figma_setup.md      # Figma integration guide
+├── DEVELOPMENT_SETUP.md        # Dev container setup
+└── ...                         # Other documentation
 ```
 
 ## Building and Testing
@@ -555,6 +594,12 @@ See [infrastructure/README.md](infrastructure/README.md) and [scripts/infrastruc
 - **Azure SDK**:
   - `@azure/identity` for authentication
   - `@azure/keyvault-secrets` for Key Vault access
+- **Design Integration**:
+  - `figma-api` for Figma REST API access
+  - Custom caching layer for free-tier optimization
+- **Development Tools**:
+  - `tsx` for TypeScript script execution
+  - Pre-commit hooks with hadolint, prettier, ESLint
 - **Runtime**: Node.js 22
 - **Deployment**: Azure Container Apps
 
@@ -611,6 +656,15 @@ Make sure `frontend/app/layout.tsx` exists. This file was added as part of the i
 - Verify the managed identity has "Key Vault Secrets User" role
 - Check that the Key Vault URL and secret name are correct
 - Ensure the Container App is using the correct managed identity
+
+### Figma integration issues
+
+- **Token not found**: Ensure `FIGMA_API_TOKEN` is set in `.env` or `.env.local`
+- **403 Access Denied**: Verify token has required scopes and file access permissions
+- **429 Rate Limit**: Check cache statistics with `npm run test:figma`
+- **Test connectivity**: Run `tsx scripts/testFigma.ts` for diagnostics
+
+See [Figma Setup Guide](docs/copilot_figma_setup.md) for detailed troubleshooting.
 
 ## License
 

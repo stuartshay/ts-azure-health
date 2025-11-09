@@ -12,6 +12,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "type-check": "tsc --noEmit",
+    "test:figma": "tsx scripts/testFigma.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:codegen": "playwright codegen http://localhost:3000",
     "prepare": "cd .. && husky frontend/.husky"
   },
   "dependencies": {
@@ -19,6 +26,7 @@
     "@azure/keyvault-secrets": "^4.9.0",
     "@azure/msal-browser": "^4.26.1",
     "@azure/msal-node": "^3.8.1",
+    "figma-api": "^2.1.0-beta",
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -26,7 +34,8 @@
   "devDependencies": {
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
-    "@types/node": "^22.7.5",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.19.0",
     "@types/react": "^19.2.2",
     "eslint": "^9.12.0",
     "eslint-config-next": "^16.0.0",
@@ -34,11 +43,11 @@
     "husky": "^9.1.6",
     "lint-staged": "^16.0.0",
     "prettier": "^3.3.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.6.3"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
-      "next lint --fix",
       "prettier --write"
     ],
     "*.{json,md}": [

@@ -11,3 +11,10 @@ pnpm-debug.log*
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Playwright test results and reports
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/playwright/.auth/
+.ms-playwright/
