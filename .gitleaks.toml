@@ -16,8 +16,11 @@ paths = [
   '''^\.git/''',
   '''^node_modules/''',
   '''^\.devcontainer/''',
+  '''^\.next/''',  # Next.js build artifacts with generated keys
   '''package-lock\.json$''',
   '''\.md$''',  # Documentation files often contain example keys
+  '''\.env\.example$''',  # Example env files
+  '''\.env\.template$''',  # Template env files
 ]
 
 # Allowlist specific commits (if needed)
