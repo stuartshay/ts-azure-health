@@ -81,6 +81,14 @@ jobs:
                 return $exit_code
               fi
 
+              # ScopeLocked is a permanent failure - locks must be removed first
+              if echo "$output" | grep -qE "ScopeLocked"; then
+                echo "❌ Resource group is locked. Cannot delete resources while lock is in place."
+                echo "❌ Please remove the lock temporarily or use the lock removal step in the workflow."
+                echo "$output" >&2
+                return $exit_code
+              fi
+
               if [ $attempt -eq $max_attempts ]; then
                 echo "❌ Failed after $max_attempts attempts: $description"
                 echo "$output" >&2
@@ -135,6 +143,75 @@ jobs:
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
             echo "Resource group does not exist: $RESOURCE_GROUP"
+          fi
+
+      - name: Check and remove resource group locks
+        id: check_locks
+        if: steps.check_rg.outputs.exists == 'true'
+        run: |
+          echo "🔍 Checking for locks on resource group: $RESOURCE_GROUP"
+
+          # List all locks on the resource group
+          LOCKS=$(az lock list --resource-group "$RESOURCE_GROUP" --query "[].{name:name, level:level, id:id}" -o json)
+
+          if [ "$LOCKS" = "[]" ]; then
+            echo "ℹ️  No locks found on resource group"
+            echo "had_locks=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "⚠️  Found locks on resource group:"
+            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
+            echo "had_locks=true" >> "$GITHUB_OUTPUT"
+
+            # Store lock information for restoration
+            echo "$LOCKS" > /tmp/rg-locks.json
+
+            # Remove each lock
+            echo ""
+            echo "🔓 Removing locks temporarily to allow resource deletion..."
+            echo "   (Resource group will NOT be deleted - only project resources)"
+            echo "$LOCKS" | jq -r '.[].id' | while read -r lock_id; do
+              lock_name=$(echo "$LOCKS" | jq -r ".[] | select(.id==\"$lock_id\") | .name")
+              echo "  Removing lock: $lock_name"
+              az lock delete --ids "$lock_id"
+            done
+
+            echo "✅ All locks removed successfully"
+            echo ""
+            echo "📝 Lock information saved to /tmp/rg-locks.json"
+          fi
+
+      - name: Identify resources created by this project
+        id: check_locks
+        if: steps.check_rg.outputs.exists == 'true'
+        run: |
+          echo "🔍 Checking for locks on resource group: $RESOURCE_GROUP"
+
+          # List all locks on the resource group
+          LOCKS=$(az lock list --resource-group "$RESOURCE_GROUP" --query "[].{name:name, level:level, id:id}" -o json)
+
+          if [ "$LOCKS" = "[]" ]; then
+            echo "ℹ️  No locks found on resource group"
+            echo "had_locks=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "⚠️  Found locks on resource group:"
+            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
+            echo "had_locks=true" >> "$GITHUB_OUTPUT"
+
+            # Store lock information for restoration
+            echo "$LOCKS" > /tmp/rg-locks.json
+
+            # Remove each lock
+            echo ""
+            echo "🔓 Removing locks to allow resource deletion..."
+            echo "$LOCKS" | jq -r '.[].id' | while read -r lock_id; do
+              lock_name=$(echo "$LOCKS" | jq -r ".[] | select(.id==\"$lock_id\") | .name")
+              echo "  Removing lock: $lock_name"
+              az lock delete --ids "$lock_id"
+            done
+
+            echo "✅ All locks removed successfully"
+            echo ""
+            echo "📝 Lock information saved for potential restoration"
           fi
 
       - name: Identify resources created by this project
@@ -445,6 +522,42 @@ jobs:
             echo "> **Note:** Other project resources (e.g., from pwsh-azure-health) remain intact."
             echo "> **Note:** Shared Key Vault \`kv-tsazurehealth\` in \`rg-azure-health-shared\` is preserved."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Restore resource group locks
+        if: steps.check_rg.outputs.exists == 'true' && steps.check_locks.outputs.had_locks == 'true'
+        run: |
+          echo "🔒 Restoring resource group locks..."
+
+          if [ -f /tmp/rg-locks.json ]; then
+            LOCKS=$(cat /tmp/rg-locks.json)
+
+            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
+
+            echo "$LOCKS" | jq -c '.[]' | while read -r lock; do
+              lock_name=$(echo "$lock" | jq -r '.name')
+              lock_level=$(echo "$lock" | jq -r '.level')
+
+              echo "  Restoring lock: $lock_name ($lock_level)"
+              az lock create \
+                --name "$lock_name" \
+                --resource-group "$RESOURCE_GROUP" \
+                --lock-type "$lock_level" \
+                --notes "Restored after ts-azure-health resource deletion"
+            done
+
+            echo "✅ Locks restored successfully"
+
+            {
+              echo ""
+              echo "### 🔒 Locks Restored"
+              echo ""
+              echo "Resource group locks have been restored to their original state:"
+              echo ""
+              echo "$LOCKS" | jq -r '.[] | "- \`\(.name)\` (\(.level))"'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "⚠️  Lock information file not found - skipping restoration"
+          fi
 
       - name: Skip deletion
         if: steps.check_rg.outputs.exists == 'false'
