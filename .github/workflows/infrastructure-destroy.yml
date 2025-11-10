@@ -152,15 +152,15 @@ jobs:
         run: |
           echo "🔍 Checking for locks on resource group: $RESOURCE_GROUP"
 
-          # List all locks on the resource group
-          LOCKS=$(az lock list --resource-group "$RESOURCE_GROUP" --query "[].{name:name, level:level, id:id}" -o json)
+          # List all locks on the resource group (capture full details for restoration)
+          LOCKS=$(az lock list --resource-group "$RESOURCE_GROUP" -o json)
 
           if [ "$LOCKS" = "[]" ]; then
             echo "ℹ️  No locks found on resource group"
             echo "had_locks=false" >> "$GITHUB_OUTPUT"
           else
             echo "⚠️  Found locks on resource group:"
-            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
+            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.properties.level))"'
             echo "had_locks=true" >> "$GITHUB_OUTPUT"
 
             # Store lock information for restoration
@@ -496,24 +496,27 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Restore resource group locks
-        if: steps.check_rg.outputs.exists == 'true' && steps.check_locks.outputs.had_locks == 'true'
+        if: always() && steps.check_rg.outputs.exists == 'true' && steps.check_locks.outputs.had_locks == 'true'
         run: |
           echo "🔒 Restoring resource group locks..."
 
           if [ -f /tmp/rg-locks.json ]; then
             LOCKS=$(cat /tmp/rg-locks.json)
 
-            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
+            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.properties.level))"'
 
             echo "$LOCKS" | jq -c '.[]' | while read -r lock; do
               lock_name=$(echo "$lock" | jq -r '.name')
-              lock_level=$(echo "$lock" | jq -r '.level')
+              lock_level=$(echo "$lock" | jq -r '.properties.level')
+              lock_id=$(echo "$lock" | jq -r '.id')
+              # Extract scope from lock ID (everything before /providers/Microsoft.Authorization/locks/)
+              lock_scope=$(echo "$lock_id" | sed 's|\/providers\/Microsoft.Authorization\/locks\/.*||')
 
-              echo "  Restoring lock: $lock_name ($lock_level)"
+              echo "  Restoring lock: $lock_name ($lock_level) at scope: $lock_scope"
               az lock create \
                 --name "$lock_name" \
-                --resource-group "$RESOURCE_GROUP" \
                 --lock-type "$lock_level" \
+                --scope "$lock_scope" \
                 --notes "Restored after ts-azure-health resource deletion"
             done
 
@@ -525,7 +528,7 @@ jobs:
               echo ""
               echo "Resource group locks have been restored to their original state:"
               echo ""
-              echo "$LOCKS" | jq -r '.[] | "- \`\(.name)\` (\(.level))"'
+              echo "$LOCKS" | jq -r '.[] | "- \`\(.name)\` (\(.properties.level)) - Scope: \(.id | split(\"/providers/Microsoft.Authorization/locks/\")[0])"'
             } >> "$GITHUB_STEP_SUMMARY"
           else
             echo "⚠️  Lock information file not found - skipping restoration"
