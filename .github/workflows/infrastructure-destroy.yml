@@ -16,6 +16,7 @@ permissions:
   contents: read
   id-token: write
 
+# Environment variables for retry logic
 env:
   MAX_RETRY_ATTEMPTS: 5
   RETRY_BASE_DELAY: 2
