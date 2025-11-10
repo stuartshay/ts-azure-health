@@ -48,6 +48,9 @@
     "ghcr.io/devcontainers-extra/features/shellcheck:1": {
       "version": "latest"
     },
+    "ghcr.io/devcontainers-extra/features/actionlint:1": {
+      "version": "latest"
+    },
     "ghcr.io/gvatsal60/dev-container-features/pre-commit:1": {
       "version": "latest"
     }

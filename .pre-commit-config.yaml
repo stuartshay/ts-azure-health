@@ -79,6 +79,15 @@ repos:
         files: \.bicep$
         pass_filenames: true
 
+  # GitHub Actions linting
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        args:
+          - '-config-file'
+          - 'actionlint.yaml'
+
   # Markdown formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v3.1.0
