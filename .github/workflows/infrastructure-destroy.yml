@@ -211,10 +211,12 @@ jobs:
             --query "[?tags.project=='ts-azure-health'].name" -o tsv || echo "")
 
           # Store resource names (use underscores to avoid GitHub Actions bracket notation requirement)
-          echo "managed_env=$MANAGED_ENV" >> "$GITHUB_OUTPUT"
-          echo "log_analytics=$LOG_ANALYTICS" >> "$GITHUB_OUTPUT"
-          echo "uami=$UAMI" >> "$GITHUB_OUTPUT"
-          echo "container_apps=$CONTAINER_APPS" >> "$GITHUB_OUTPUT"
+          {
+            echo "managed_env=$MANAGED_ENV"
+            echo "log_analytics=$LOG_ANALYTICS"
+            echo "uami=$UAMI"
+            echo "container_apps=$CONTAINER_APPS"
+          } >> "$GITHUB_OUTPUT"
 
           # List resources that will be deleted
           {

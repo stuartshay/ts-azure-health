@@ -44,10 +44,10 @@ jobs:
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         run: |
           if [ -z "$AZURE_CLIENT_ID" ]; then
-            echo "has_credentials=false" >> $GITHUB_OUTPUT
+            echo "has_credentials=false" >> "$GITHUB_OUTPUT"
             echo "⚠️  Azure credentials not configured - skipping what-if preview"
           else
-            echo "has_credentials=true" >> $GITHUB_OUTPUT
+            echo "has_credentials=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Azure login
@@ -68,10 +68,10 @@ jobs:
         id: login_status
         run: |
           if [ "${{ steps.azure_login.outcome }}" = "success" ]; then
-            echo "login_successful=true" >> $GITHUB_OUTPUT
+            echo "login_successful=true" >> "$GITHUB_OUTPUT"
             echo "✅ Azure login successful"
           else
-            echo "login_successful=false" >> $GITHUB_OUTPUT
+            echo "login_successful=false" >> "$GITHUB_OUTPUT"
             echo "⚠️  Azure login failed - credentials may be invalid or expired"
           fi
 

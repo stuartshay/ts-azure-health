@@ -40,14 +40,14 @@ jobs:
         id: package-version
         run: |
           VERSION=$(jq -r '.version' frontend/package.json)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "📦 Package version: $VERSION"
 
       - name: Generate version tags
         id: set-version
         run: |
           BASE_VERSION="${{ steps.package-version.outputs.version }}"
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
 
           if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
             # Production: semantic versioning (1.2.3)
@@ -55,8 +55,8 @@ jobs:
             TAGS="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$BASE_VERSION"
 
             # Extract major.minor and major versions
-            MAJOR_MINOR=$(echo $BASE_VERSION | cut -d. -f1-2)
-            MAJOR=$(echo $BASE_VERSION | cut -d. -f1)
+            MAJOR_MINOR=$(echo "$BASE_VERSION" | cut -d. -f1-2)
+            MAJOR=$(echo "$BASE_VERSION" | cut -d. -f1)
 
             TAGS="$TAGS,${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$MAJOR_MINOR"
             TAGS="$TAGS,${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$MAJOR"
@@ -73,10 +73,12 @@ jobs:
             echo "🏷️  Develop tags: $IMAGE_TAG, develop, sha-$SHORT_SHA"
           fi
 
-          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "tags=$TAGS" >> $GITHUB_OUTPUT
-          echo "full-image=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
-          echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          {
+            echo "image-tag=$IMAGE_TAG"
+            echo "tags=$TAGS"
+            echo "full-image=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG"
+            echo "short-sha=$SHORT_SHA"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Log in to Azure
         env:
@@ -119,17 +121,19 @@ jobs:
 
       - name: Image summary
         run: |
-          echo "## 🎉 Docker Image Published" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** ${{ steps.set-version.outputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ steps.set-version.outputs.short-sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Registry:** ${{ env.ACR_NAME }}.azurecr.io" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Tags" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.set-version.outputs.tags }}" | tr ',' '\n' >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🎉 Docker Image Published"
+            echo ""
+            echo "**Environment:** ${{ github.event.inputs.environment }}"
+            echo "**Version:** ${{ steps.set-version.outputs.image-tag }}"
+            echo "**Commit:** ${{ steps.set-version.outputs.short-sha }}"
+            echo "**Registry:** ${{ env.ACR_NAME }}.azurecr.io"
+            echo ""
+            echo "### Tags"
+            echo '```'
+            echo "${{ steps.set-version.outputs.tags }}" | tr ',' '\n'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-infrastructure:
     name: Deploy to Azure Container Apps
@@ -145,17 +149,21 @@ jobs:
         id: env-vars
         run: |
           if [[ "${{ github.event.inputs.environment }}" == "prod" ]]; then
-            echo "resource-group=rg-azure-health" >> $GITHUB_OUTPUT
-            echo "container-app=app-tsazurehealth-prod" >> $GITHUB_OUTPUT
-            echo "kv-name=kv-tsazurehealth-prod" >> $GITHUB_OUTPUT
-            echo "managed-env=env-tsazurehealth-prod" >> $GITHUB_OUTPUT
-            echo "uami-name=id-tsazurehealth-prod" >> $GITHUB_OUTPUT
+            {
+              echo "resource-group=rg-azure-health"
+              echo "container-app=app-tsazurehealth-prod"
+              echo "kv-name=kv-tsazurehealth-prod"
+              echo "managed-env=env-tsazurehealth-prod"
+              echo "uami-name=id-tsazurehealth-prod"
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "resource-group=rg-azure-health-dev" >> $GITHUB_OUTPUT
-            echo "container-app=app-tsazurehealth-dev" >> $GITHUB_OUTPUT
-            echo "kv-name=kv-tsazurehealth-dev" >> $GITHUB_OUTPUT
-            echo "managed-env=env-tsazurehealth-dev" >> $GITHUB_OUTPUT
-            echo "uami-name=id-tsazurehealth-dev" >> $GITHUB_OUTPUT
+            {
+              echo "resource-group=rg-azure-health-dev"
+              echo "container-app=app-tsazurehealth-dev"
+              echo "kv-name=kv-tsazurehealth-dev"
+              echo "managed-env=env-tsazurehealth-dev"
+              echo "uami-name=id-tsazurehealth-dev"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: Log in to Azure
@@ -174,17 +182,17 @@ jobs:
         run: |
           # Get managed identity ID
           if ! UAMI_ID=$(az identity show \
-            --name ${{ steps.env-vars.outputs.uami-name }} \
-            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --name "${{ steps.env-vars.outputs.uami-name }}" \
+            --resource-group "${{ steps.env-vars.outputs.resource-group }}" \
             --query id -o tsv 2>/dev/null); then
             echo "❌ Error: Managed identity '${{ steps.env-vars.outputs.uami-name }}' not found in resource group '${{ steps.env-vars.outputs.resource-group }}'. Please ensure infrastructure is deployed first."
             exit 1
           fi
-          echo "uami-id=$UAMI_ID" >> $GITHUB_OUTPUT
+          echo "uami-id=$UAMI_ID" >> "$GITHUB_OUTPUT"
 
           # Get Key Vault URL (find by tags/prefix since it has unique suffix)
           KV_NAME=$(az keyvault list \
-            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --resource-group "${{ steps.env-vars.outputs.resource-group }}" \
             --query "[?starts_with(name, 'kv-tsazurehealth-${{ github.event.inputs.environment }}')].name | [0]" -o tsv)
 
           if [ -z "$KV_NAME" ] || [ "$KV_NAME" = "null" ]; then
@@ -194,20 +202,20 @@ jobs:
 
           KV_URL=$(az keyvault show \
             --name "$KV_NAME" \
-            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --resource-group "${{ steps.env-vars.outputs.resource-group }}" \
             --query properties.vaultUri -o tsv)
-          echo "kv-url=$KV_URL" >> $GITHUB_OUTPUT
-          echo "kv-name=$KV_NAME" >> $GITHUB_OUTPUT
+          echo "kv-url=$KV_URL" >> "$GITHUB_OUTPUT"
+          echo "kv-name=$KV_NAME" >> "$GITHUB_OUTPUT"
 
           # Get Container Apps Environment ID
           if ! ENV_ID=$(az containerapp env show \
-            --name ${{ steps.env-vars.outputs.managed-env }} \
-            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --name "${{ steps.env-vars.outputs.managed-env }}" \
+            --resource-group "${{ steps.env-vars.outputs.resource-group }}" \
             --query id -o tsv 2>/dev/null); then
             echo "❌ Error: Container Apps environment '${{ steps.env-vars.outputs.managed-env }}' not found. Please ensure infrastructure is deployed first."
             exit 1
           fi
-          echo "env-id=$ENV_ID" >> $GITHUB_OUTPUT
+          echo "env-id=$ENV_ID" >> "$GITHUB_OUTPUT"
 
       - name: Create or update Container App
         run: |
@@ -252,26 +260,28 @@ jobs:
         id: app-url
         run: |
           FQDN=$(az containerapp show \
-            --name ${{ steps.env-vars.outputs.container-app }} \
-            --resource-group ${{ steps.env-vars.outputs.resource-group }} \
+            --name "${{ steps.env-vars.outputs.container-app }}" \
+            --resource-group "${{ steps.env-vars.outputs.resource-group }}" \
             --query properties.configuration.ingress.fqdn \
             --output tsv)
-          echo "fqdn=$FQDN" >> $GITHUB_OUTPUT
+          echo "fqdn=$FQDN" >> "$GITHUB_OUTPUT"
           echo "🌐 Application URL: https://$FQDN"
 
       - name: Deployment summary
         run: |
-          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Resource Group:** ${{ steps.env-vars.outputs.resource-group }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Container App:** ${{ steps.env-vars.outputs.container-app }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ needs.build-and-push.outputs.full-image }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🌐 Application URL" >> $GITHUB_STEP_SUMMARY
-          echo "https://${{ steps.app-url.outputs.fqdn }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "- Verify the deployment in Azure Portal" >> $GITHUB_STEP_SUMMARY
-          echo "- Check Container App logs for any issues" >> $GITHUB_STEP_SUMMARY
-          echo "- Test the application endpoints" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## 🚀 Deployment Complete"
+            echo ""
+            echo "**Environment:** ${{ github.event.inputs.environment }}"
+            echo "**Resource Group:** ${{ steps.env-vars.outputs.resource-group }}"
+            echo "**Container App:** ${{ steps.env-vars.outputs.container-app }}"
+            echo "**Image:** ${{ needs.build-and-push.outputs.full-image }}"
+            echo ""
+            echo "### 🌐 Application URL"
+            echo "https://${{ steps.app-url.outputs.fqdn }}"
+            echo ""
+            echo "### 📋 Next Steps"
+            echo "- Verify the deployment in Azure Portal"
+            echo "- Check Container App logs for any issues"
+            echo "- Test the application endpoints"
+          } >> "$GITHUB_STEP_SUMMARY"
