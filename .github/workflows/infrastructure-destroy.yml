@@ -181,40 +181,6 @@ jobs:
           fi
 
       - name: Identify resources created by this project
-        id: check_locks
-        if: steps.check_rg.outputs.exists == 'true'
-        run: |
-          echo "🔍 Checking for locks on resource group: $RESOURCE_GROUP"
-
-          # List all locks on the resource group
-          LOCKS=$(az lock list --resource-group "$RESOURCE_GROUP" --query "[].{name:name, level:level, id:id}" -o json)
-
-          if [ "$LOCKS" = "[]" ]; then
-            echo "ℹ️  No locks found on resource group"
-            echo "had_locks=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "⚠️  Found locks on resource group:"
-            echo "$LOCKS" | jq -r '.[] | "  - \(.name) (\(.level))"'
-            echo "had_locks=true" >> "$GITHUB_OUTPUT"
-
-            # Store lock information for restoration
-            echo "$LOCKS" > /tmp/rg-locks.json
-
-            # Remove each lock
-            echo ""
-            echo "🔓 Removing locks to allow resource deletion..."
-            echo "$LOCKS" | jq -r '.[].id' | while read -r lock_id; do
-              lock_name=$(echo "$LOCKS" | jq -r ".[] | select(.id==\"$lock_id\") | .name")
-              echo "  Removing lock: $lock_name"
-              az lock delete --ids "$lock_id"
-            done
-
-            echo "✅ All locks removed successfully"
-            echo ""
-            echo "📝 Lock information saved for potential restoration"
-          fi
-
-      - name: Identify resources created by this project
         id: identify_resources
         if: steps.check_rg.outputs.exists == 'true'
         run: |
