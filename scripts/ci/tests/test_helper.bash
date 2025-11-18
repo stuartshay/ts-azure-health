@@ -4,7 +4,8 @@
 
 # Setup function to create temporary test directory
 setup_test_dir() {
-  export TEST_TEMP_DIR="$(mktemp -d)"
+  TEST_TEMP_DIR="$(mktemp -d)"
+  export TEST_TEMP_DIR
   export ORIGINAL_PWD="$PWD"
 }
 
@@ -101,9 +102,11 @@ assert_file_contains() {
 # Assert command output contains string
 assert_output_contains() {
   local search_string="$1"
+  # shellcheck disable=SC2154
   echo "$output" | grep -q "$search_string" || {
     echo "Output does not contain expected string: $search_string"
     echo "Actual output:"
+    # shellcheck disable=SC2154
     echo "$output"
     return 1
   }
