@@ -14,9 +14,11 @@ The test suite validates:
 ### Test Status
 
 **Production Ready:**
+
 - `install-cost-tools.bats` - All 8 tests passing, integrated into pre-commit hooks
 
 **In Development:**
+
 - `cost-estimate.bats`, `cost-analysis.bats`, `policy-check.bats` - Tests exist but need refinement for argument parsing compatibility. These test files validate script structure and basic functionality but require updates to properly test complex Azure CLI interactions.
 
 ## Prerequisites

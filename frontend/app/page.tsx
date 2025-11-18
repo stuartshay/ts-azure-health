@@ -2,6 +2,17 @@
 import { msal } from "@/lib/msalClient";
 import { useState } from "react";
 
+interface HealthCheckResponse {
+  success: boolean;
+  backendUrl?: string;
+  status?: string;
+  statusCode?: number;
+  responseTime?: number;
+  timestamp?: string;
+  error?: string;
+  details?: Record<string, unknown>;
+}
+
 export default function Home() {
   const [status, setStatus] = useState<string>("");
 
@@ -39,12 +50,58 @@ export default function Home() {
 
   async function readSecret() {
     try {
-      const r = await fetch("/api/kv-secret");
-      const t = await r.text();
-      setStatus(`KV secret: ${t}`);
+      setStatus("Checking backend health...");
+      const r = await fetch("/api/health-check");
+
+      if (!r.ok) {
+        const errorText = await r.text();
+        setStatus(`Health check failed (${r.status}): ${errorText}`);
+        return;
+      }
+
+      const healthData: HealthCheckResponse = await r.json();
+
+      // Format the health check response
+      let statusMessage = "";
+
+      if (healthData.success) {
+        statusMessage = `✅ Backend Health Check: ${healthData.status}\n\n`;
+        statusMessage += `URL: ${healthData.backendUrl}\n`;
+        statusMessage += `Status Code: ${healthData.statusCode}\n`;
+        statusMessage += `Response Time: ${healthData.responseTime}ms\n`;
+        statusMessage += `Timestamp: ${healthData.timestamp ? new Date(healthData.timestamp).toLocaleString() : "N/A"}\n`;
+
+        if (healthData.details && Object.keys(healthData.details).length > 0) {
+          statusMessage += `\nDetails:\n${JSON.stringify(healthData.details, null, 2)}`;
+        }
+      } else {
+        statusMessage = `❌ Backend Health Check: ${healthData.status || "Failed"}\n\n`;
+
+        if (healthData.backendUrl) {
+          statusMessage += `URL: ${healthData.backendUrl}\n`;
+        }
+
+        if (healthData.statusCode) {
+          statusMessage += `Status Code: ${healthData.statusCode}\n`;
+        }
+
+        if (healthData.responseTime) {
+          statusMessage += `Response Time: ${healthData.responseTime}ms\n`;
+        }
+
+        if (healthData.error) {
+          statusMessage += `\nError: ${healthData.error}`;
+        }
+
+        if (healthData.timestamp) {
+          statusMessage += `\nTimestamp: ${new Date(healthData.timestamp).toLocaleString()}`;
+        }
+      }
+
+      setStatus(statusMessage);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      setStatus("KV read failed: " + message);
+      setStatus(`❌ Health check request failed: ${message}`);
     }
   }
 
@@ -56,7 +113,18 @@ export default function Home() {
         <button onClick={callDownstream}>Call Protected API</button>
         <button onClick={readSecret}>Read KV Secret (server)</button>
       </div>
-      <pre>{status}</pre>
+      <pre
+        style={{
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          backgroundColor: "#f5f5f5",
+          padding: "12px",
+          borderRadius: "4px",
+          border: "1px solid #ddd",
+        }}
+      >
+        {status}
+      </pre>
     </main>
   );
 }
