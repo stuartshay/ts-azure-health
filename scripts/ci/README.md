@@ -7,32 +7,39 @@ This directory contains CI/CD helper scripts for cost estimation and policy comp
 ### Cost Estimation Tools
 
 #### `install-cost-tools.sh`
+
 Installs Azure cost estimation tools for CI/CD pipelines.
 
 **Installs:**
+
 - Azure Cost Estimator (ACE) v1.6.4 - Pre-deployment cost estimation
 - azure-cost-cli v0.52.0 - Post-deployment cost analysis
 
 **Usage:**
+
 ```bash
 ./scripts/ci/install-cost-tools.sh
 ```
 
 **Requirements:**
+
 - wget, unzip
 - .NET SDK (for azure-cost-cli)
 
 ---
 
 #### `cost-estimate.sh`
+
 Pre-deployment cost estimation from Bicep templates using ACE.
 
 **Usage:**
+
 ```bash
 ./scripts/ci/cost-estimate.sh <bicep_file> <params_file> <subscription_id>
 ```
 
 **Example:**
+
 ```bash
 ./scripts/ci/cost-estimate.sh \
   infrastructure/main.bicep \
@@ -41,6 +48,7 @@ Pre-deployment cost estimation from Bicep templates using ACE.
 ```
 
 **Outputs:**
+
 - Estimated monthly costs in USD
 - Resource-level cost breakdown
 - GitHub Actions outputs and summaries
@@ -48,14 +56,17 @@ Pre-deployment cost estimation from Bicep templates using ACE.
 ---
 
 #### `cost-analysis.sh`
+
 Post-deployment actual cost analysis using Azure Cost Management API.
 
 **Usage:**
+
 ```bash
 ./scripts/ci/cost-analysis.sh <resource_group> <subscription_id> [timeframe]
 ```
 
 **Example:**
+
 ```bash
 ./scripts/ci/cost-analysis.sh \
   rg-azure-health-dev \
@@ -64,6 +75,7 @@ Post-deployment actual cost analysis using Azure Cost Management API.
 ```
 
 **Timeframes:**
+
 - `MonthToDate` (default)
 - `WeekToDate`
 - `Custom`
@@ -73,14 +85,17 @@ Post-deployment actual cost analysis using Azure Cost Management API.
 ### Policy Compliance
 
 #### `policy-check.sh`
+
 Azure Policy compliance checking for resource groups.
 
 **Usage:**
+
 ```bash
 ./scripts/ci/policy-check.sh <resource_group> <subscription_id>
 ```
 
 **Example:**
+
 ```bash
 ./scripts/ci/policy-check.sh \
   rg-azure-health-dev \
@@ -88,6 +103,7 @@ Azure Policy compliance checking for resource groups.
 ```
 
 **Checks:**
+
 - Policy assignments
 - Compliance state
 - Policy exemptions
@@ -98,19 +114,23 @@ Azure Policy compliance checking for resource groups.
 ### Verification
 
 #### `verify-cost-tools.sh`
+
 Verifies that cost estimation tools are properly installed.
 
 **Usage:**
+
 ```bash
 ./scripts/ci/verify-cost-tools.sh
 ```
 
 **Checks:**
+
 - ACE installation and version
 - azure-cost-cli installation
 - .NET runtime availability
 
 **Example output:**
+
 ```
 🔍 Verifying cost estimation tools installation...
 
@@ -137,12 +157,15 @@ Verifies that cost estimation tools are properly installed.
 Cost tools are automatically installed when the DevContainer is created via `.devcontainer/postCreate.sh`.
 
 **What gets installed:**
+
 1. **ACE (Azure Cost Estimator)**
+
    - Downloaded to `~/.local/bin/ace/`
    - Added to PATH in `.bashrc` and `.zshrc`
    - Version: 1.6.4
 
 2. **azure-cost-cli**
+
    - Installed via .NET global tool
    - Requires .NET 9 runtime (auto-installed)
    - Version: 0.52.0
@@ -152,6 +175,7 @@ Cost tools are automatically installed when the DevContainer is created via `.de
    - Installed alongside .NET 10 SDK
 
 **Verify installation:**
+
 ```bash
 ./scripts/ci/verify-cost-tools.sh
 ```
@@ -163,11 +187,13 @@ Cost tools are automatically installed when the DevContainer is created via `.de
 BATS tests are available in `scripts/ci/tests/`.
 
 **Run all tests:**
+
 ```bash
 bats scripts/ci/tests/
 ```
 
 **Run specific test:**
+
 ```bash
 bats scripts/ci/tests/cost-estimate.bats
 ```
