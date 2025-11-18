@@ -510,7 +510,7 @@ jobs:
               lock_level=$(echo "$lock" | jq -r '.properties.level')
               lock_id=$(echo "$lock" | jq -r '.id')
               # Extract scope from lock ID (everything before /providers/Microsoft.Authorization/locks/)
-              lock_scope=$(echo "$lock_id" | sed 's|\/providers\/Microsoft.Authorization\/locks\/.*||')
+              lock_scope="${lock_id%%/providers/Microsoft.Authorization/locks/*}"
 
               echo "  Restoring lock: $lock_name ($lock_level) at scope: $lock_scope"
               az lock create \
