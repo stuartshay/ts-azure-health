@@ -84,6 +84,14 @@ git commit --no-verify -m "Your commit message"
 
 - **prettier**: Formats JSON, YAML, and Markdown files
 
+### CI Scripts
+
+- **bats-tests**: Runs BATS (Bash Automated Testing System) unit tests for CI scripts
+  - Triggers when `.sh` or `.bats` files in `scripts/ci/` are modified
+  - Currently runs `install-cost-tools.bats` (8 passing tests)
+  - Skips gracefully if BATS is not installed
+  - See `scripts/ci/tests/README.md` for test details
+
 ## Troubleshooting
 
 ### Hook failures
