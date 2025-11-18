@@ -8,7 +8,7 @@ setup() {
   setup_test_dir
   setup_github_actions_env
   export SCRIPT_PATH="$ORIGINAL_PWD/scripts/ci/cost-estimate.sh"
-  cd "$TEST_TEMP_DIR"
+  cd "$TEST_TEMP_DIR" || exit 1
 }
 
 teardown() {

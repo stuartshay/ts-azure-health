@@ -79,14 +79,23 @@ az bicep build \
   --outfile /tmp/main.json
 
 log "Running ACE estimation..."
+
+# Build ACE arguments
+ACE_ARGS=(
+  /tmp/main.json
+  "$SUBSCRIPTION_ID"
+  "${RESOURCE_GROUP:-rg-placeholder}"
+  --inline "environment=$ENVIRONMENT"
+  --inline "location=$LOCATION"
+  --currency USD
+)
+
+if [ -n "$PARAMETERS_FILE" ]; then
+  ACE_ARGS+=(--parameters "$PARAMETERS_FILE")
+fi
+
 set +e
-ACE_COST_OUTPUT=$(/tmp/ace/azure-cost-estimator \
-  /tmp/main.json \
-  "$SUBSCRIPTION_ID" \
-  "${RESOURCE_GROUP:-rg-placeholder}" \
-  --inline "environment=$ENVIRONMENT" \
-  --inline "location=$LOCATION" \
-  --currency USD 2>&1)
+ACE_COST_OUTPUT=$(/tmp/ace/azure-cost-estimator "${ACE_ARGS[@]}" 2>&1)
 set -e
 
 echo "$ACE_COST_OUTPUT"
