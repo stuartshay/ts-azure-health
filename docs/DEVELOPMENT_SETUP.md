@@ -28,6 +28,7 @@ The fastest way to get started is using VS Code Dev Containers, which provides a
    ```
 
 3. When prompted, click "Reopen in Container" or use the Command Palette (F1):
+
    - Type: `Dev Containers: Reopen in Container`
 
 4. Wait for the container to build and initialize (first time takes a few minutes)

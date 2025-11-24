@@ -76,6 +76,7 @@ The project uses a comprehensive Playwright configuration in `playwright.config.
 The configuration includes multiple projects for comprehensive testing:
 
 1. **Desktop Browsers**:
+
    - Chromium (Chrome/Edge)
    - Firefox
    - WebKit (Safari)

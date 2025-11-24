@@ -556,11 +556,13 @@ npm install --save-dev @percy/cli @percy/playwright
    - Test API route error handling
 
 2. **Enable Dependabot**
+
    - Create `.github/dependabot.yml`
    - Group Azure packages
    - Weekly schedule
 
 3. **Add VS Code workspace settings**
+
    - Create `.vscode/` folder
    - Add `settings.json` and `extensions.json`
    - Document debug configurations
@@ -573,16 +575,19 @@ npm install --save-dev @percy/cli @percy/playwright
 ### Medium-term (1-2 weeks)
 
 5. **Application Insights Integration**
+
    - Add to Next.js app
    - Track Figma API metrics
    - Monitor cache performance
 
 6. **Storybook Setup**
+
    - Initialize Storybook
    - Document existing components
    - Add Figma plugin for design comparison
 
 7. **E2E Testing with Playwright**
+
    - Write critical path tests
    - Add to CI pipeline
    - Generate test reports
@@ -595,16 +600,19 @@ npm install --save-dev @percy/cli @percy/playwright
 ### Long-term (1 month+)
 
 9. **Figma Webhooks**
+
    - Implement webhook endpoint
    - Cache invalidation strategy
    - Team notifications
 
 10. **Design System Documentation**
+
     - ADRs for architecture decisions
     - API documentation with Swagger
     - Component library with Storybook
 
 11. **Performance Monitoring**
+
     - Bundle size tracking
     - Lighthouse CI integration
     - Performance budgets
