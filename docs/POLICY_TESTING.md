@@ -61,7 +61,6 @@ Example policy section in PR comment:
 **Non-Compliant Resources**:
 
 1. `/subscriptions/.../resourceGroups/rg-azure-health-dev/providers/Microsoft.Storage/storageAccounts/devst123`
-
    - Policy: Require HTTPS for storage accounts
    - Reason: HTTPS-only traffic not enabled
 

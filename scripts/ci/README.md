@@ -159,13 +159,11 @@ Cost tools are automatically installed when the DevContainer is created via `.de
 **What gets installed:**
 
 1. **ACE (Azure Cost Estimator)**
-
    - Downloaded to `~/.local/bin/ace/`
    - Added to PATH in `.bashrc` and `.zshrc`
    - Version: 1.6.4
 
 2. **azure-cost-cli**
-
    - Installed via .NET global tool
    - Requires .NET 9 runtime (auto-installed)
    - Version: 0.52.0

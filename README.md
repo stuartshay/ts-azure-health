@@ -53,7 +53,6 @@ If you prefer to set up manually, see [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPME
    ```
 
    You'll need to configure:
-
    - `NEXT_PUBLIC_AAD_CLIENT_ID` - Your SPA app registration client ID
    - `NEXT_PUBLIC_AAD_TENANT_ID` - Your Azure tenant ID
    - `AAD_BFF_CLIENT_ID` - Your BFF app registration client ID
@@ -170,7 +169,6 @@ This project supports multi-environment deployments using infrastructure as code
 Each environment has isolated resources:
 
 - **Development (dev)**
-
   - Resource Group: `rg-azure-health-dev`
   - Container App: `app-tsazurehealth-dev`
   - Key Vault: `kv-tsazurehealth-dev-<unique>`
@@ -314,13 +312,11 @@ You can deploy infrastructure using either:
 **Infrastructure Management:**
 
 - **Deploy Infrastructure** (`infrastructure-deploy.yml`)
-
   - Go to Actions → "Deploy Infrastructure" → "Run workflow"
   - Select environment: `dev` or `prod`
   - Deploys all Azure resources using Bicep
 
 - **Destroy Infrastructure** (`infrastructure-destroy.yml`)
-
   - Go to Actions → "Destroy Infrastructure" → "Run workflow"
   - Select environment: `dev` or `prod`
   - Deletes all resources in the environment
@@ -378,7 +374,6 @@ To bump the version, update the `version` field in `frontend/package.json` and c
 #### What the Workflow Does
 
 1. **Build Phase**:
-
    - Reads version from `frontend/package.json`
    - Generates appropriate tags based on environment
    - Builds Docker image with multi-stage optimization

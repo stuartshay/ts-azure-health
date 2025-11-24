@@ -67,19 +67,15 @@ Resources are named using the pattern: `{resource-type}-{baseName}-{environment}
 - **`location`** - Azure region for resources
   - Default: Resource group location
 - **`baseName`** - Base name for resources (will be suffixed with environment)
-
   - Default: `tsazurehealth`
 
 - **`acrName`** - Name of existing Azure Container Registry
-
   - Default: `azureconnectedservicesacr`
 
 - **`acrResourceGroup`** - Resource group of the ACR
-
   - Default: `AzureConnectedServices-RG`
 
 - **`imageTag`** - Container image tag to deploy
-
   - Default: `latest`
 
 - **`externalIngress`** - Enable public FQDN ingress
