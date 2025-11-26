@@ -38,6 +38,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Checkout shared workflows
+        uses: actions/checkout@v5
+        with:
+          repository: stuartshay/shared-azure-health
+          path: .shared
+
       - name: Check Azure credentials
         id: check_credentials
         env:
@@ -231,18 +237,27 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            echo "" >> /tmp/whatif-summary.md
+            echo "---" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
             exit 0
           fi
 
           echo "🔒 Checking Azure Policy compliance for Dev environment..."
-          ./scripts/ci/policy-check.sh \
-            "$RESOURCE_GROUP" \
-            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-          # Append policy summary to whatif summary
-          if [ -f /tmp/policy-summary.md ]; then
-            cat /tmp/policy-summary.md >> /tmp/whatif-summary.md
-          fi
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
+          } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Staging environment
         if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
@@ -309,18 +324,27 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            echo "" >> /tmp/whatif-summary.md
+            echo "---" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
             exit 0
           fi
 
           echo "🔒 Checking Azure Policy compliance for Staging environment..."
-          ./scripts/ci/policy-check.sh \
-            "$RESOURCE_GROUP" \
-            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-          # Append policy summary to whatif summary (avoid duplicates)
-          if [ -f /tmp/policy-summary.md ]; then
-            cat /tmp/policy-summary.md >> /tmp/whatif-summary.md
-          fi
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
+          } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Prod environment
         if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
@@ -386,18 +410,27 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            echo "" >> /tmp/whatif-summary.md
+            echo "---" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
+            echo "" >> /tmp/whatif-summary.md
+            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
             exit 0
           fi
 
           echo "🔒 Checking Azure Policy compliance for Prod environment..."
-          ./scripts/ci/policy-check.sh \
-            "$RESOURCE_GROUP" \
-            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
-          # Append policy summary to whatif summary (avoid duplicates)
-          if [ -f /tmp/policy-summary.md ]; then
-            cat /tmp/policy-summary.md >> /tmp/whatif-summary.md
-          fi
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
+          } >> /tmp/whatif-summary.md
 
       - name: Comment PR with What-If results
         if: github.event_name == 'pull_request'
