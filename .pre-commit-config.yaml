@@ -94,7 +94,7 @@ repos:
       - id: bats-tests
         name: Run BATS Tests
         description: Run Bash Automated Testing System tests for CI scripts
-        entry: bash -c 'if command -v bats &> /dev/null; then bats scripts/ci/tests/install-cost-tools.bats; else echo "⚠️  BATS not installed, skipping tests"; fi'
+        entry: bash -c 'if command -v bats &> /dev/null; then bats scripts/ci/tests/*.bats; else echo "⚠️  BATS not installed, skipping tests"; fi'
         language: system
         files: ^scripts/ci/.*\.(sh|bats)$
         pass_filenames: false
