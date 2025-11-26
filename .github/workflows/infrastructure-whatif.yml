@@ -237,12 +237,14 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
-            echo "" >> /tmp/whatif-summary.md
-            echo "---" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
             exit 0
           fi
 
@@ -324,12 +326,14 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
-            echo "" >> /tmp/whatif-summary.md
-            echo "---" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
             exit 0
           fi
 
@@ -410,12 +414,14 @@ jobs:
           # Check if resource group exists before policy check
           if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
             echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
-            echo "" >> /tmp/whatif-summary.md
-            echo "---" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "#### 🛡️ Policy Compliance Check" >> /tmp/whatif-summary.md
-            echo "" >> /tmp/whatif-summary.md
-            echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment." >> /tmp/whatif-summary.md
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
             exit 0
           fi
 
