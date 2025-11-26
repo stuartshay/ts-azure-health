@@ -38,6 +38,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Checkout shared workflows
+        uses: actions/checkout@v5
+        with:
+          repository: stuartshay/shared-azure-health
+          path: .shared
+
       - name: Check Azure credentials
         id: check_credentials
         env:
@@ -158,6 +164,14 @@ jobs:
           chmod +x /tmp/retry-utils.sh
           echo "✅ Retry utilities configured (max attempts: $MAX_RETRY_ATTEMPTS, base delay: ${RETRY_BASE_DELAY}s)"
 
+      - name: Install cost estimation tools
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true'
+        shell: bash
+        run: |
+          echo "📦 Installing Azure Cost Estimator and azure-cost-cli..."
+          ./scripts/ci/install-cost-tools.sh
+          echo "✅ Cost tools installed successfully"
+
       - name: Run What-If for Dev environment
         if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
         id: whatif_dev
@@ -193,6 +207,58 @@ jobs:
             echo "$whatif_output"
             echo '```'
             echo ""
+          } >> /tmp/whatif-summary.md
+
+      - name: Cost Estimation for Dev environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
+        id: cost_dev
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "💰 Estimating costs for Dev environment..."
+          ./scripts/ci/cost-estimate.sh \
+            infrastructure/main.bicep \
+            infrastructure/dev.bicepparam \
+            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+          # Append cost summary to whatif summary
+          if [ -f /tmp/cost-summary.md ]; then
+            cat /tmp/cost-summary.md >> /tmp/whatif-summary.md
+          fi
+
+      - name: Policy Check for Dev environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'dev')
+        id: policy_dev
+        continue-on-error: true
+        shell: bash
+        run: |
+          RESOURCE_GROUP="rg-azure-health-dev"
+
+          # Check if resource group exists before policy check
+          if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
+            exit 0
+          fi
+
+          echo "🔒 Checking Azure Policy compliance for Dev environment..."
+
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
           } >> /tmp/whatif-summary.md
 
       - name: Run What-If for Staging environment
@@ -232,6 +298,58 @@ jobs:
             echo ""
           } >> /tmp/whatif-summary.md
 
+      - name: Cost Estimation for Staging environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
+        id: cost_staging
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "💰 Estimating costs for Staging environment..."
+          ./scripts/ci/cost-estimate.sh \
+            infrastructure/main.bicep \
+            infrastructure/staging.bicepparam \
+            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+          # Append cost summary to whatif summary (avoid duplicates)
+          if [ -f /tmp/cost-summary.md ]; then
+            cat /tmp/cost-summary.md >> /tmp/whatif-summary.md
+          fi
+
+      - name: Policy Check for Staging environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'staging')
+        id: policy_staging
+        continue-on-error: true
+        shell: bash
+        run: |
+          RESOURCE_GROUP="rg-azure-health-staging"
+
+          # Check if resource group exists before policy check
+          if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
+            exit 0
+          fi
+
+          echo "🔒 Checking Azure Policy compliance for Staging environment..."
+
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
+          } >> /tmp/whatif-summary.md
+
       - name: Run What-If for Prod environment
         if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
         id: whatif_prod
@@ -266,6 +384,58 @@ jobs:
             echo '```'
             echo "$whatif_output"
             echo '```'
+          } >> /tmp/whatif-summary.md
+
+      - name: Cost Estimation for Prod environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
+        id: cost_prod
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "💰 Estimating costs for Prod environment..."
+          ./scripts/ci/cost-estimate.sh \
+            infrastructure/main.bicep \
+            infrastructure/prod.bicepparam \
+            "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
+          # Append cost summary to whatif summary (avoid duplicates)
+          if [ -f /tmp/cost-summary.md ]; then
+            cat /tmp/cost-summary.md >> /tmp/whatif-summary.md
+          fi
+
+      - name: Policy Check for Prod environment
+        if: steps.check_credentials.outputs.has_credentials == 'true' && steps.login_status.outputs.login_successful == 'true' && (github.event_name == 'pull_request' || github.event.inputs.environment == 'prod')
+        id: policy_prod
+        continue-on-error: true
+        shell: bash
+        run: |
+          RESOURCE_GROUP="rg-azure-health"
+
+          # Check if resource group exists before policy check
+          if ! az group exists --name "$RESOURCE_GROUP" > /dev/null 2>&1; then
+            echo "⚠️  Resource group $RESOURCE_GROUP does not exist - skipping policy check"
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "#### 🛡️ Policy Compliance Check"
+              echo ""
+              echo "⚠️  **Resource group does not exist yet.** Policy compliance will be checked after deployment."
+            } >> /tmp/whatif-summary.md
+            exit 0
+          fi
+
+          echo "🔒 Checking Azure Policy compliance for Prod environment..."
+
+          # Source shared policy query utilities
+          source .shared/scripts/policy-query.sh
+
+          # Generate policy report and append to whatif summary
+          {
+            echo ""
+            echo "---"
+            echo ""
+            generate_policy_report "$RESOURCE_GROUP"
           } >> /tmp/whatif-summary.md
 
       - name: Comment PR with What-If results
@@ -321,7 +491,7 @@ jobs:
             ${summary}
 
             ---
-            <sub>💡 ${hasCredentials && loginSuccessful ? 'This preview shows potential changes to both **dev** and **prod** environments based on the current Bicep templates.' : 'Configure valid Azure credentials to enable infrastructure change previews.'}</sub>
+            <sub>💡 ${hasCredentials && loginSuccessful ? 'This preview shows potential changes, **estimated costs**, and **policy compliance** for each environment based on the current Bicep templates.' : 'Configure valid Azure credentials to enable infrastructure change previews, cost estimation, and policy compliance checks.'}</sub>
             `;
 
             // Find existing comment

@@ -328,6 +328,9 @@ You can deploy infrastructure using either:
 - **Infrastructure What-If** (`infrastructure-whatif.yml`)
   - Automatically runs on PRs that modify infrastructure files
   - Shows preview of changes without deploying
+  - **Includes cost estimation** - estimates monthly Azure costs before deployment
+  - **Includes policy compliance checks** - validates resources against Azure Policy
+  - See [Cost Estimation Guide](docs/COST_ESTIMATION.md) and [Policy Testing Guide](docs/POLICY_TESTING.md)
 
 **Application Deployment:**
 
@@ -638,6 +641,25 @@ The repository includes a complete development container configuration with:
 - Consistent development environment across all machines
 
 See [docs/DEVELOPMENT_SETUP.md](docs/DEVELOPMENT_SETUP.md) for setup instructions.
+
+## Documentation
+
+Comprehensive guides are available in the `docs/` directory:
+
+### Infrastructure & Deployment
+
+- **[Cost Estimation](docs/COST_ESTIMATION.md)** - Automated Azure cost estimation in CI/CD
+- **[Policy Testing](docs/POLICY_TESTING.md)** - Azure Policy compliance checking
+- **[GitHub Actions Setup](docs/GITHUB_ACTIONS_SETUP.md)** - CI/CD configuration and OIDC setup
+- **[Development Setup](docs/DEVELOPMENT_SETUP.md)** - Dev Container and local setup
+
+### Features & Tools
+
+- **[Figma Setup](docs/copilot_figma_setup.md)** - Server-side Figma integration
+- **[Playwright Setup](docs/PLAYWRIGHT_SETUP.md)** - End-to-end testing
+- **[Pre-commit Hooks](docs/PRE_COMMIT.md)** - Code quality automation
+- **[Essential Tools](docs/ESSENTIAL_TOOLS.md)** - Development tooling guide
+- **[Spec Kit](docs/SPEC-KIT-SETUP.md)** - Specification tooling
 
 ## Troubleshooting
 
